@@ -1,0 +1,2083 @@
+# Preprocess Data
+```{r}
+raw.df <- read.csv("final_data_export_consensus.csv")
+```
+
+```{r}
+# install.packages("dplyr")
+library("dplyr")
+# install.packages("sjmisc")
+library("sjmisc")
+# for data manipulation with dplyr see: https://www.youtube.com/watch?v=Gvhkp-Yw65U
+# for splitting 2 values in 1 cell see: https://www.youtube.com/watch?v=DiY8EqZDwoI at 3:17 (e.g. if 2 scales for 1 outcome)
+# for joining 2 data frames see:        https://www.youtube.com/watch?v=DiY8EqZDwoI at 11:57
+```
+
+```{r}
+raw.df <- raw.df %>%
+  filter(Study.design == "Passive RCT")
+```
+
+## Drop unimportant columns by name
+### Remove column rages (first columns)
+```{r}
+my.df <- raw.df %>%
+  select(-Reviewer.Name:-Further.Information.inserted.in.Extraction.Form.)  # "-" indicates deleting these columns
+```
+
+### Remove single column names and repeating names with ascending numbers (table headlines)
+```{r}
+cols.pop.char <- c()
+
+for (time.point in 0:4){
+  cols.pop.char <- append(cols.pop.char,
+                          sprintf("Population.Characteristics..Time.Point.%d..",
+                                  time.point
+                                  )
+                          )
+}
+
+cols.outc.t <- c()
+
+for (outc in 1:7){
+  for (t in 0:3){
+    cols.outc.t <- append(cols.outc.t,
+                          sprintf("Outcome.%d..Time.Point.%d..",
+                                  outc, t
+                                  )
+                          )
+  }
+}
+
+cols.quant.results <- c()
+
+i <- 0
+for (int.1 in 1:3){
+  i <- i + 1
+  if (i == 1){
+    for (int.2 in 2:4){
+      for (t in 1:3){
+        cols.quant.results <- append(cols.quant.results,
+                              sprintf("Results.for.Int%d.X.Int%d.of.Time.Point.%d.",
+                                      int.1, int.2, t
+                                      )
+                              )
+      }
+    }
+  } else if (i == 2){
+    for (int.2 in 3:4){
+      for (t in 1:3){
+        cols.quant.results <- append(cols.quant.results,
+                              sprintf("Results.for.Int%d.X.Int%d.of.Time.Point.%d.",
+                                      int.1, int.2, t
+                                      )
+                              )
+      }
+    }
+  } else if (i == 3){
+    int.2 <- 4
+    for (t in 1:3){
+      cols.quant.results <- append(cols.quant.results,
+                            sprintf("Results.for.Int%d.X.Int%d.of.Time.Point.%d.",
+                                    int.1, int.2, t
+                                    )
+                            )
+    }
+  } else {
+    print("i not = 1, 2, or 3")
+  }
+}
+
+remove.cols <- c(cols.pop.char[],
+                 "Dates.of.Measuring.Time.Points.",
+                 "Between.Measuring.Time.Points..Duration.",
+                 "Intervention.and.Comparisons.",
+                 "Definition.of.Outcomes.",
+                 "Measures.of.Outcomes.",
+                 cols.outc.t[],
+                 cols.quant.results[],
+                 "Results.of.Key.Themes."
+                 )
+
+my.df <- my.df[, ! names(my.df) %in% remove.cols]
+```
+
+```{r}
+my.df
+```
+
+## Create arrays, data frame lists, and data frames from Covidence tables
+### Set basic parameter
+```{r}
+nm.placeholder <- -999  # placeholder for values marked as nm (not mentioned)
+
+flag.x.s.r <- 2
+  # x.s.r = exact value (0), mean s (1), or mean r (2)
+  # flag.x.s.r = 2 --> include all
+  # flag.x.s.r = 1 --> only include mean s and exact values
+  # flag.x.s.r = 0 --> include only exact vaules
+
+study.no <- length(my.df[,"Study.ID"])
+```
+
+### Functions
+#### Checking for digits and characters
+```{r}
+# function returning TRUE if string contains no characters but digits instead
+no.char.but.digit.inside <- function(value){
+  !(str_contains(value, letters, logic = "OR") |
+  str_contains(value, LETTERS, logic = "OR")) &
+  grepl("\\d", value)
+}
+
+# function returning TRUE if string contains characters
+char.inside <- function(value){
+  str_contains(value, letters, logic = "OR") |
+  str_contains(value, LETTERS, logic = "OR")
+}
+```
+
+#### For mean values
+```{r}
+# extracts mean r and mean s values as double
+get.all.means <- function(value){
+  if (grepl("mean r", value)){
+    extracted.value <- as.double(sub(" mean r.*", "", value))
+        # extracts anything before " mean r" as double                 
+  } else if (grepl("mean s", value)){
+    extracted.value <- as.double(sub(" mean s.*", "", value))
+  } else if (grepl("mean", value)){
+    extracted.value <- NA
+    cat("value ", value, " not added because mean only")
+    cat("\n")
+  } else {
+    extracted.value <- value
+  }
+  extracted.value
+}
+
+# extracts mean s only as double
+get.mean.s.only <- function(value){
+    if (grepl("mean s", value)){
+    extracted.value <- as.double(sub(" mean s.*", "", value))
+  } else if (grepl("mean r", value)){
+    extracted.value <- NA
+    cat("value ", value, " not added because mean r")
+    cat("\n")
+  } else if (grepl("mean", value)){
+    extracted.value <- NA
+    cat("value ", value, " not added because mean only")
+    cat("\n")
+  } else {
+    extracted.value <- value
+  }
+  extracted.value
+}
+```
+
+#### Convert value from nm, NA, digit, or char
+```{r}
+convert.value <- function(value, missing.value.placeholder = nm.placeholder, only.double = TRUE){
+  na.value <- FALSE
+  if (is.na(value)){
+    na.value <- TRUE
+  }
+  if (na.value == TRUE){
+    extracted.value <- NA
+  } else {
+    value <- as.character(value)
+
+# special cases
+    if (value == "nm"){
+      extracted.value <- missing.value.placeholder
+    } else if (value == ""){
+      extracted.value <- NA
+    } else if (value == "^"){
+      extracted.value <- value
+        # extracts value after "<" as double 
+    } else if (grepl("<", value)){
+      extracted.value <- as.double(sub(".*<", "", value))
+        # extracts value after "<" as double 
+    } else if (grepl(">", value)){
+      extracted.value <- as.double(sub(".*>", "", value))
+
+# no.char.but.digit
+    } else if (no.char.but.digit.inside(value)){
+      if (grepl(",", value)){
+        cat("decimal separator replaced with point in ", value)
+        extracted.value <- as.double(sub(",", ".", value))
+          # sub(a, b, value) replaces a with b in value
+      } else if (grepl("-", value)){
+        # like "0 - 40"
+        extracted.value <- value
+      } else {
+        extracted.value <- as.double(value) 
+      }
+
+# char
+    } else if (char.inside(value)){
+      if (flag.x.s.r == 2){
+        extracted.value <- get.all.means(value)
+      } else if (flag.x.s.r == 1){
+        extracted.value <- get.mean.s.only(value)
+      } else if ((flag.x.s.r == 0) & !(grepl("mean r", value) | grepl("mean s", value))){
+        extracted.value <- NA
+        if (grepl("mean", value)){
+          cat("value not added because mean only: ", value)
+          cat("\n")
+        }
+      } else {
+        if (only.double == TRUE){
+          extracted.value <- NA
+          cat("unknown case with char inside: ", value)
+          cat("\n")
+        } else {
+          extracted.value <- value
+        }
+      }
+    } else {
+      cat("unknown case: ", value)
+      cat("\n")
+    }
+  }
+  extracted.value
+}
+```
+
+#### Check if multiple commas are present in string
+```{r}
+multiple.commas.present <- function(input.string){
+  multiple.commas.present <- FALSE
+  comma.count <- 0
+
+  iterable.string <- tryCatch(
+    {
+      strsplit(input.string, "")[[1]]
+        # strsplit(input.string, "")[[1]] makes string iterable
+        # "try" part
+    },
+    error=function(cond) {
+      message(paste("Error of multiple.commas.present() for input:", input.string, "| Type:", class(input.string)))
+      message(cond)
+      return("")
+      # "except" part for errors
+    },
+    warning=function(cond) {
+      message(paste("Warning of multiple.commas.present() for input:", input.string, "| Type:", class(input.string)))
+      message(cond)
+      return("")
+      # "except" part for warnings
+    }
+  )
+    # see following link for exception handling: https://stackoverflow.com/questions/12193779/how-to-write-trycatch-in-r
+
+  for (i in iterable.string){
+    if (i == ","){
+      comma.count <- comma.count + 1
+    }
+  }
+  if (comma.count > 1){
+    multiple.commas.present <- TRUE
+  }
+  multiple.commas.present
+}
+```
+
+#### For arrays
+```{r}
+clean.and.shape.data.to.array <- function(
+  my.df, start, end, dims, dimname.list, nm.placeholder, flag.x.s.r, study.no
+  ){
+  my.array <- array(rep(NA),
+                    dim = dims,
+                    dimnames = dimname.list
+                    )
+  my.data <- my.df %>%
+    select(start:end)
+  
+  if (length(dims) == 6){
+    for (study in 1:study.no){
+      my.data.col.no = 1
+      for (dim.4.elmnt in 1:dims[4]){
+        for (mtrx in 1:dims[3]){
+          for (row in 1:dims[1]){
+            for (col in 1:dims[2]){
+              value <- my.data[study, my.data.col.no]
+              my.data.col.no <- my.data.col.no + 1
+              if (grepl(",", value)){
+                if (!multiple.commas.present(value)){
+                  value.before.comma <- sub(",.*", "", value)
+                    # extracts anything before "," as double
+                  my.array[row, col, mtrx, dim.4.elmnt, 1, study] <- convert.value(
+                    value.before.comma, nm.placeholder
+                    )
+                  value.after.comma <- sub(".*,", "", value)
+                    # extracts anything after "," as double
+                  my.array[row, col, mtrx, dim.4.elmnt, 2, study] <- convert.value(
+                    value.after.comma, nm.placeholder
+                    )
+                } else {
+                    cat(value, "has multiple commas, find solution")
+                  }
+              } else {
+                my.array[row, col, mtrx, dim.4.elmnt, 1, study] <- convert.value(
+                  value, nm.placeholder
+                  )
+              }
+            }
+          }
+        }
+      }
+    }
+  } else if (length(dims) <= 4){
+    for (study in 1:study.no){
+      my.data.col.no = 1
+      for (mtrx in 1:dims[3]){
+        for (row in 1:dims[1]){
+          for (col in 1:dims[2]){
+            value <- my.data[study, my.data.col.no]
+            my.data.col.no <- my.data.col.no + 1
+            my.array[row, col, mtrx, study] <- convert.value(
+              value, nm.placeholder
+              )
+          }
+        }
+      }
+    }
+  } else {
+    print("unknwon dimesion")
+  }
+  my.array
+}
+
+```
+
+#### For data frame lists
+```{r}
+# create data frames out of 2D Tables (with rows and cols swapped)
+clean.data.to.df.list.swap <- function(
+  my.df, start, end, dims, study.names, dimname.list, check.multiple.commas = FALSE
+  ){
+  study.df <- data.frame(matrix(
+    rep(NA),
+    nrow = dims[1],
+    ncol = dims[2]
+  ))
+  row.names(study.df) <- dimname.list[[1]]
+  colnames(study.df) <- dimname.list[[2]]
+  
+  # create list of NA data frames of preferred shape
+  study.df.list <- list()
+  for (i in 1:length(study.names)){
+    study.df.list <- append(study.df.list, list(study.df), 0)
+  }
+  names(study.df.list) <- study.names
+  
+  my.data <- my.df %>%
+    select(start:end)
+  
+  # vector of my.data.col.no to swapped rows and cols of Covidence output
+  my.data.col.no.swapped <- c()
+  i <- 0
+  j <- 1
+  for (k in 1:dims[1]){
+    i <- 0
+    for (l in 1:dims[2]){
+      my.data.col.no.swapped <- append(my.data.col.no.swapped, i * dims[1] + j)
+      i <- i + 1
+    }
+    j <- j + 1 
+  }
+  # dims[1] = rows new, cols old
+  # dims[2] = cols new, rows old
+  
+  # e.g., filling pattern for old 4 x 7 and new 7 x 4 data frame 
+  ## 1, dims[1]+1, 2*dims[1]+1, 3*dims[1]+1, 4*dims[1]+1, 5*dims[1]+1, 6*dims[1]+1,
+  ## 2, dims[1]+2, 2*dims[1]+2, 3*dims[1]+2, 4*dims[1]+2, 5*dims[1]+2, 6*dims[1]+2,
+  ## x, x, x, x, x, x, x,
+  ## x, x, x, x, x, x, x
+  
+  for (study in 1:study.no){
+    m <- 1
+    for (row in 1:dims[1]){
+      for (col in 1:dims[2]){
+        value <- my.data[study, my.data.col.no.swapped[m]]
+        m <- m + 1
+
+        if (check.multiple.commas & is.character(value)){
+          if (multiple.commas.present(value)){
+            cat("multiple commas in value, find solution:\n", value, "\n")
+          }
+        }
+        
+        study.df.list[[study]][row, col] <- convert.value(
+          value, nm.placeholder, only.double = FALSE
+          )
+      }
+    }
+  }
+  study.df.list
+}
+
+```
+
+```{r}
+# create data frames out of 2D Tables
+clean.data.to.df.list <- function(
+  my.df, start, end, dims, study.names, dimname.list, check.multiple.commas = FALSE
+  ){
+  study.df <- data.frame(matrix(
+    rep(NA),
+    nrow = dims[1],
+    ncol = dims[2]
+  ))
+  row.names(study.df) <- dimname.list[[1]]
+  colnames(study.df) <- dimname.list[[2]]
+  
+  # create list of NA data frames of preferred shape
+  study.df.list <- list()
+  for (i in 1:length(study.names)){
+    study.df.list <- append(study.df.list, list(study.df), 0)
+  }
+  names(study.df.list) <- study.names
+  
+  my.data <- my.df %>%
+    select(start:end)
+  
+  for (study in 1:study.no){
+    my.data.col.no <- 1
+    for (row in 1:dims[1]){
+      for (col in 1:dims[2]){
+        value <- my.data[study, my.data.col.no]
+        my.data.col.no <- my.data.col.no + 1
+        
+        if (check.multiple.commas & is.character(value)){
+          if (multiple.commas.present(value)){
+            cat("multiple commas in value, find solution:\n", value, "\n")
+          }
+        }
+        study.df.list[[study]][row, col] <- convert.value(
+          value, nm.placeholder, only.double = FALSE
+          )
+      }
+    }
+  }
+  study.df.list
+}
+
+```
+
+#### Print array
+```{r}
+print.array.not.na <- function(input.array){
+  if (length(dim(input.array)) == 6){
+    for (dim.6.element in 1:dim(input.array)[6]){
+      cat("\n###### ", dimnames(input.array)[[6]][dim.6.element], " ######")
+      for (dim.5.element in 1:dim(input.array)[5]){
+        cat("\n### ", dimnames(input.array)[[5]][dim.5.element], " ###")
+        for (dim.4.element in 1:dim(input.array)[4]){
+          cat("\n#", dimnames(input.array)[[4]][dim.4.element], "\n")
+          for (mtrx in 1:dim(input.array)[3]){
+            mtrx.is.na <- TRUE
+            for (col in 1:dim(input.array)[2]){
+              for (row in 1:dim(input.array)[1]){
+                if (!is.na(input.array[
+                  row, col, mtrx, dim.4.element, dim.5.element, dim.6.element
+                                      ]
+                          )
+                   ){
+                     mtrx.is.na <- FALSE
+                }
+              }
+            }
+            if (mtrx.is.na == FALSE){
+              print(dimnames(input.array)[[3]][mtrx])
+              print(input.array[,,mtrx, dim.4.element, dim.5.element, dim.6.element])
+              cat("\n")
+            }
+          } 
+        }
+      }
+    }
+  } else if (length(dim(input.array)) == 5){
+    for (dim.5.element in 1:dim(input.array)[5]){
+      cat("\n### ", dimnames(input.array)[[5]][dim.5.element], " ###")
+      for (dim.4.element in 1:dim(input.array)[4]){
+        cat("\n#", dimnames(input.array)[[4]][dim.4.element], "\n")
+        for (mtrx in 1:dim(input.array)[3]){
+          mtrx.is.na <- TRUE
+          for (col in 1:dim(input.array)[2]){
+            for (row in 1:dim(input.array)[1]){
+              if (!is.na(input.array[
+                row, col, mtrx, dim.4.element, dim.5.element
+                                    ]
+                        )
+                  ){
+                    mtrx.is.na <- FALSE
+              }
+            }
+          }
+          if (mtrx.is.na == FALSE){
+            print(dimnames(input.array)[[3]][mtrx])
+            print(input.array[,,mtrx, dim.4.element, dim.5.element])
+            cat("\n")
+          }
+        } 
+      }
+    } 
+  } else if (length(dim(input.array)) == 4){
+    for (dim.4.element in 1:dim(input.array)[4]){
+      cat("\n#", dimnames(input.array)[[4]][dim.4.element], "\n")
+      for (mtrx in 1:dim(input.array)[3]){
+        mtrx.is.na <- TRUE
+        for (col in 1:dim(input.array)[2]){
+          for (row in 1:dim(input.array)[1]){
+            if (!is.na(input.array[
+              row, col, mtrx, dim.4.element
+                                  ]
+                      )
+                ){
+                  mtrx.is.na <- FALSE
+            }
+          }
+        }
+        if (mtrx.is.na == FALSE){
+          print(dimnames(input.array)[[3]][mtrx])
+          print(input.array[,,mtrx, dim.4.element])
+          cat("\n")
+        }
+      } 
+    }
+  } else if (length(dim(input.array)) == 3){
+    for (mtrx in 1:dim(input.array)[3]){
+      mtrx.is.na <- TRUE
+      for (col in 1:dim(input.array)[2]){
+        for (row in 1:dim(input.array)[1]){
+          if (!is.na(input.array[
+            row, col, mtrx
+                                ]
+                    )
+              ){
+                mtrx.is.na <- FALSE
+          }
+        }
+      }
+      if (mtrx.is.na == FALSE){
+        print(dimnames(input.array)[[3]][mtrx])
+        print(input.array[,,mtrx])
+        cat("\n")
+      }
+    }
+  } else {
+    print("unknown case")
+  }
+}
+```
+
+#### Search in df list
+```{r}
+search.df.list <- function(df.list, search.string){
+  found <- FALSE
+  for (i in 1:length(df.list)){
+    for (row in 1:nrow(df.list[[i]])){
+      for (col in 1:ncol(df.list[[i]])){
+        cell.string <- as.character(df.list[[i]][row,col])
+        if (!is.character(search.string)){
+          print("search term has to be character")
+        }
+        if (grepl(search.string, cell.string)){
+          cat(
+            "search term found in:\ndf:", names(df.list)[i], "\nrow:",
+            rownames(df.list[[i]])[row], "\ncol:", colnames(df.list[[i]])[col],
+            "\nvalue:", df.list[[i]][row, col], "\n\n"
+            )
+          found <- TRUE
+        }
+      }
+    }
+  }
+  if (!found){
+    print("serach string not found")
+  }
+}
+```
+
+### Array
+#### Population Characteristics
+```{r}
+dims <- c(4, 5, 4, study.no)
+
+dimname.list <- list(c("No.Participants", "Mean.Age", "No.Females", "No.Males"),
+                     c("Intervention.1", "Intervention.2", "Intervention.3", "Intervention.4", "Over.All"),
+                     c("T0", "T1", "T2", "T3"),
+                     my.df[,"Study.ID"]
+                     )
+
+start <- "Number.of.Participants.Intervention.1.T0"
+end <- "Number.of.Males.Over.All.T3"
+
+population.characteristics.array <- clean.and.shape.data.to.array(
+  my.df, start, end, dims, dimname.list, nm.placeholder, flag.x.s.r, study.no
+)
+
+my.df <- my.df %>%
+  select(-Number.of.Participants.Intervention.1.T0:-Number.of.Males.Over.All.T3)
+```
+
+#### Results Descriptive
+```{r}
+dims <- c(4, 3, 4, 7, 2, study.no)
+
+dimname.list <- list(c("Intervention.1", "Intervention.2", "Intervention.3", "Control"),
+                     c("Mean", "SD", "n"),
+                     c("T0", "T1", "T2", "T3"),
+                     c("Outcome.1", "Outcome.2", "Outcome.3", "Outcome.4", "Outcome.5", "Outcome.6", "Outcome.7"),
+                     c("Scale.1", "Scale.2"),
+                     my.df[,"Study.ID"]
+                     )
+
+start <- "Intervention.1.Mean.O1T0"
+end <- "Control.or.Intervention.4.n.in.case.of.period.O7T3"
+
+results.descriptive.array <- clean.and.shape.data.to.array(
+    my.df, start, end, dims, dimname.list, nm.placeholder, flag.x.s.r, study.no
+)
+
+my.df <- my.df %>%
+  select(-Intervention.1.Mean.O1T0:-Control.or.Intervention.4.n.in.case.of.period.O7T3)
+```
+
+#### Results Quantitative
+```{r}
+dims <- c(7, 3, 3, 6, 2, study.no)
+
+dimname.list <- list(c("Outcome.1", "Outcome.2", "Outcome.3", "Outcome.4", "Outcome.5", "Outcome.6", "Outcome.7"),
+                     c("P.Value", "Effect.Size", "Effect.Size.CI"),
+                     c("T1", "T2", "T3"),
+                     c("Int1.X.Int2", "Int1.X.Int3", "Int1.X.Int4", "Int2.X.Int3", "Int2.X.Int4", "Int3.X.Int4"),
+                     c("Scale.1", "Scale.2"),
+                     my.df[,"Study.ID"]
+                     )
+
+start <- "Outcome.1.P.Value.1x2T1"
+end <- "Outcome.7.Confidence.Interval.of.Effect.Size.3x4T3"
+
+results.quantitative.array <- clean.and.shape.data.to.array(
+    my.df, start, end, dims, dimname.list, nm.placeholder, flag.x.s.r, study.no
+)
+my.df <- my.df %>%
+  select(-Outcome.1.P.Value.1x2T1:-Outcome.7.Confidence.Interval.of.Effect.Size.3x4T3)
+```
+
+### Data frame lists
+#### Intervention Comparison
+```{r}
+dims <- c(4, 7)
+
+study.names <- my.df[,"Study.ID"]
+
+dimname.list <- list(c("Intervention.1", "Intervention.2", "Intervention.3", "Control"),
+                     c("Name", "Short.Description", "Delivery.Mode", "Meditation.App", "Sessions.Duration.in.minutes",
+                       "Frequency.in.times.per.week", "Total.Duration.in.Days")
+                     )
+start <- "Name.Intervention.1"
+end <- "Total.Duration.of.Intervention.in.Days.Control.or.Intervention.4"
+
+intervention.comparisons.df.list <- clean.data.to.df.list.swap(
+ my.df, start, end, dims, study.names, dimname.list
+)
+
+my.df <- my.df %>%
+  select(-Name.Intervention.1:-Total.Duration.of.Intervention.in.Days.Control.or.Intervention.4)
+
+intervention.comparisons.df.list
+```
+
+#### Measure of Outcomes
+```{r}
+dims <- c(7, 3)
+
+study.names <- my.df[,"Study.ID"]
+
+dimname.list <- list(c("Outcome.1", "Outcome.2", "Outcome.3", "Outcome.4", "Outcome.5", "Outcome.6", "Outcome.7"),
+                     c("Measures.Name", "Start.and.End.Point", "High.or.low.means.resilient")
+                     )
+start <- "Outcome.1.Scale.s.or.other.Measure.s.Name"
+end <- "Outcome.7.High.or.low.means.resilient"
+
+outcome.measures.df.list <- clean.data.to.df.list(
+ my.df, start, end, dims, study.names, dimname.list, check.multiple.commas = TRUE
+)
+
+my.df <- my.df %>%
+  select(-Outcome.1.Scale.s.or.other.Measure.s.Name:-Outcome.7.High.or.low.means.resilient)
+
+outcome.measures.df.list
+
+```
+
+#### Qualitative Results of Data Analyses
+```{r}
+dims <- c(7, 3)
+
+study.names <- my.df[,"Study.ID"]
+
+dimname.list <- list(c("Key.Theme.1", "Key.Theme.2", "Key.Theme.3", "Key.Theme.4", "Key.Theme.5", "Key.Theme.6", "Key.Theme.7"),
+                     c("Name.of.Key.Theme", "Description.of.Key.Theme", "Results")
+                     )
+start <- "Key.Theme.1.Name.of.Key.Theme"
+end <- "Key.Theme.7.Results"
+
+results.qualitative.df.list <- clean.data.to.df.list(
+ my.df, start, end, dims, study.names, dimname.list
+)
+
+my.df <- my.df %>%
+  select(-Key.Theme.1.Name.of.Key.Theme:-Key.Theme.7.Results)
+
+results.qualitative.df.list
+
+```
+
+### Data frames
+#### Dates of Measuring Time Points
+```{r}
+dates.measuring.time.points.df <- my.df[
+  , which(colnames(my.df)=="Time.Point.0.Date"):which(colnames(my.df)=="Time.Point.3.Date")
+]
+
+for (row in 1:nrow(dates.measuring.time.points.df)){
+  for (col in 1:ncol(dates.measuring.time.points.df)){
+    dates.measuring.time.points.df[row, col] <- convert.value(dates.measuring.time.points.df[row, col])
+  }
+}
+
+rownames(dates.measuring.time.points.df) <- study.names
+
+my.df <- my.df %>%
+  select(-Time.Point.0.Date:-Time.Point.3.Date)
+
+
+dates.measuring.time.points.df
+```
+
+#### Between-Measuring Time Points Duration
+```{r}
+between.T.duration.df <- my.df[
+  , which(colnames(my.df)=="Time.Point.0...1.Duration.in.Days"):which(colnames(my.df)=="Time.Point.0...3.Duration.in.Days")
+]
+
+for (row in 1:nrow(between.T.duration.df)){
+  for (col in 1:ncol(between.T.duration.df)){
+    between.T.duration.df[row, col] <- convert.value(between.T.duration.df[row, col])
+  }
+}
+
+rownames(between.T.duration.df) <- study.names
+
+my.df <- my.df %>%
+  select(-Time.Point.0...1.Duration.in.Days:-Time.Point.0...3.Duration.in.Days)
+
+between.T.duration.df
+```
+
+#### Definition of Outcomes
+```{r}
+outcome.definitions.df <- my.df[
+  , which(colnames(my.df)=="Outcome.1.Definition"):which(colnames(my.df)=="Outcome.7.Definition")
+]
+
+for (row in 1:nrow(outcome.definitions.df)){
+  for (col in 1:ncol(outcome.definitions.df)){
+    outcome.definitions.df[row, col] <- convert.value(outcome.definitions.df[row, col])
+  }
+}
+
+rownames(outcome.definitions.df) <- study.names
+
+my.df <- my.df %>%
+  select(-Outcome.1.Definition:-Outcome.7.Definition)
+
+outcome.definitions.df
+```
+
+#### Outcome Names
+```{r}
+outcome.names.df <- my.df[, which(colnames(my.df)=="Name.of.Outcome.1"):which(colnames(my.df)=="Name.of.Outcome.7")]
+
+for (row in 1:nrow(outcome.names.df)){
+  for (col in 1:ncol(outcome.names.df)){
+    outcome.names.df[row, col] <- convert.value(outcome.names.df[row, col])
+  }
+}
+
+my.df <- my.df %>%
+  select(-Name.of.Outcome.1:-Name.of.Outcome.7)
+
+rownames(outcome.names.df) <- study.names
+outcome.names.df
+```
+
+#### Meditation Techniques
+```{r}
+meditation.techniques.df <- my.df[
+  , which(colnames(my.df)=="Practiced.Techniques.in.Intervention.1"):which(colnames(my.df)=="Practiced.Techniques.in.Control.or.Intervention.4")
+]
+
+for (row in 1:nrow(meditation.techniques.df)){
+  for (col in 1:ncol(meditation.techniques.df)){
+    meditation.techniques.df[row, col] <- convert.value(meditation.techniques.df[row, col])
+  }
+}
+
+rownames(meditation.techniques.df) <- study.names
+
+my.df <- my.df %>%
+  select(-Practiced.Techniques.in.Intervention.1:-Practiced.Techniques.in.Control.or.Intervention.4)
+
+meditation.techniques.df
+```
+
+#### Left 1 D Data
+```{r}
+my.df[my.df == 'None' | my.df == '' | is.na(my.df)] <- "NA"
+
+one.D.info.df <- my.df
+
+rownames(one.D.info.df) <- study.names
+
+one.D.info.df
+```
+
+## Set unique names for scale, delivery modes, and meditation type 
+### Meditation types
+```{r}
+# get all unique meditation types
+meditation.types <- c()
+
+for (intervention in 1:ncol(meditation.techniques.df)) {
+  for (study in 1:nrow(meditation.techniques.df)){
+    if (
+      !(
+        meditation.techniques.df[study, intervention] == "NA" |
+        is.na(meditation.techniques.df[study, intervention]) |
+        meditation.techniques.df[study, intervention] == nm.placeholder |
+        meditation.techniques.df[study, intervention] == "None" |
+        meditation.techniques.df[study, intervention] == "No Intervention" |
+        meditation.techniques.df[study, intervention] == "Wait-List Control"
+      )
+    ){
+      meditation.types <- append(meditation.types, meditation.techniques.df[study, intervention])
+    }
+  }
+}
+
+unique.meditation.types <- unique(meditation.types)
+for (meditation.type in unique.meditation.types){
+  print(meditation.type)
+}
+```
+
+```{r}
+# categorize meditation types
+meditation.type.attentional <- c(
+  "Breathing Exercise (no further Info)",
+  "Transcendental Meditation (TM)",
+  "Body Scan; Breathing Exercise (no further Info)",
+  "Breathing Exercise (no further Info); Only \"Mindfulness Meditation\" named",
+  "Only \"Mindfulness Meditation\" named",
+  "Mantra Meditation",
+  "Body Scan",
+  "Breathing Exercise (no further Info); Other: mindfulness toward sensations and experiences of the body, mindfulness toward the contents of the mind, skill of mental noting to label their mental contents, cultivating awareness and understanding of emotions as mental contents and the nonjudgmental stance toward emotions with a goal of optimizing the response to one’s emotions",
+  "Other: silent meditations with bells, personalized meditations with or without guided\nintro and bells",
+  "Zen Meditation",
+  "Breathing Exercise (no further Info); Other: \"awareness to any sensations in their body or in their immediate environment\", focus on \"thoughts and feelings\",  \"non-judgmental observation\"",
+  "Shavasana",
+  "Mantra Meditation; Only \"Focused Attention Meditation\" named; Other: Readings reflecting meditative perspective",
+  "Breathing Exercise (no further Info); Open Monitoring Meditation",
+  "Body Scan; Other: \"become aware of their sensations, including sights, sounds and somatic sensations\", relaxing body areas, observe their physical sensations thoughts and emotions without reaction or judgment,",
+  'Body Scan; Only "Mindfulness Meditation" named'
+)
+
+meditation.type.constructive <- c(
+  "Loving-Kindness Meditation"
+)
+
+meditation.type.deconstructive <- c(
+  "Vipassana", "Other: devotional readings to ponder, meditations taken from a widely used devotional book designed for Christian readers titled"
+  # no forgivingness compared to other intervention in Vasiliauskas 2013
+)
+
+meditation.type.attentional.and.constructive <- c(
+  "Body Scan; Breathing Exercise (no further Info); Loving-Kindness Meditation"
+)
+
+meditation.type.attentional.and.deconstructive <- c(
+  "Prayer; Other: devotional readings to ponder, meditations taken from a widely used devotional book designed for Christian readers titled, forgiveness meditations"
+    # due to "forgiveness" --> strengthens cognitive and affective patterns (constructive), "reading to ponder" --> deconstructive
+)
+
+meditation.type.attentional.constructive.and.deconstructive <- c(
+  "Other: mindfulness-based exercises through audio video or text files, grounding visualization, gratitude, imagining the life you want, finding meaning",
+  "Breathing Exercise (no further Info); Other: focusing on meta-awareness, \"Mindfulness-based exercises [...] about happiness in life as the result of a benevolent attitude towards life and a positive relationship to oneself and others\", \"Methods of introspection, reflection and self-care\""
+)
+
+
+meditation.type.all <- c(
+  meditation.type.attentional,
+  meditation.type.constructive,
+  meditation.type.attentional.and.constructive,
+  meditation.type.attentional.and.deconstructive,
+  meditation.type.attentional.constructive.and.deconstructive,
+  meditation.type.deconstructive
+)
+
+names(meditation.type.all) <- c(
+  "meditation.type.attentional",
+  "meditation.type.constructive",
+  "meditation.type.attentional.and.constructive",
+  "meditation.type.attentional.and.deconstructive",
+  "meditation.type.attentional.constructive.and.deconstructive",
+  "meditation.type.deconstructive"
+)
+```
+
+
+```{r}
+# check if all entries are mentioned
+med.tech.missed <- FALSE
+for (intervention in 1:ncol(meditation.techniques.df)){
+  for (study in 1:nrow(meditation.techniques.df)){
+    if (
+      !is.na(meditation.techniques.df[study, intervention]) &
+      !(
+        meditation.techniques.df[study, intervention] %in% c(
+          "NA", nm.placeholder, as.character(nm.placeholder), "None", "No Intervention",
+          "Wait-List Control"
+        )
+      ) &
+      !(meditation.techniques.df[study, intervention] %in% meditation.type.all)
+    ){
+      cat(
+        study.names[study], "Intervention", intervention,
+        "| not in meditation.type.all:\n",
+        meditation.techniques.df[study, intervention], "\n\n"
+      )
+      med.tech.missed <- TRUE
+    }
+  }
+}
+
+if (!med.tech.missed){
+  cat("all meditation techniques mentioned")
+}
+```
+
+### Scales
+```{r}
+# find out all unique scale cell entries
+# measures <- c()
+# 
+# for (outcome.measures.df in outcome.measures.df.list) {
+#   for (outcome.measure in outcome.measures.df[,"Measures.Name"]){
+#     if (!(is.na(outcome.measure) | outcome.measure == "NA" | outcome.measure == nm.placeholder)){
+#       # if (multiple.commas.present(outcome.measure)){
+#       #   cat("multiple commas in: ", outcome.measure, "\n")
+#       # }
+#       measures <- append(measures, outcome.measure)
+#     }
+#   }
+# }
+# 
+# unique.measures <- unique(measures)
+# 
+# i <- 1
+# for (j in unique.measures){
+#   print(i)
+#   print(j)
+#   cat("\n")
+#   i <- i + 1
+# }
+```
+
+#### Resilience
+```{r}
+scale.CD.RISC.10.synonyms <- c(
+  "Connor-Davidson Resilience Scale (CD-RISC-10) (Connor & Davidson, 2003)"
+)
+```
+
+#### Mental health-related
+##### Including Subscales
+```{r}
+scale.DASS.synonyms <- c(
+  "Depression, Anxiety\nand Stress Scale (DASS) 26",
+  "Depression Anxiety and Stress Scale (DASS) - Depression Subcale",
+  "Depression Anxiety and Stress Scale (DASS) - Anxiety Subcale",
+  "Depression Anxiety and Stress Scale [32] - depression subcale",
+  "Depression Anxiety and Stress Scale [32] - anxiety subcale",
+  "Depression Anxiety and Stress Scale [32] - stress subcale",
+  "Depression, Anxiety, and Stress Scale – 21 (DASS-21)",
+  "Depression Anxiety and Stress Scale (DASS)",
+  "Depression, Anxiety, and Stress Scale – 21 (DASS-21), subscale depression",
+  "Depression, Anxiety, and Stress Scale – 21 (DASS-21), subscale anxiety"
+)
+
+scale.POMS.synonyms <- c(
+  "Profile of Mood States total mood disturbance main scale 23",
+  "Profile of Mood States anxiety subscale",
+  "Profile of Mood States depression subscale",
+  "Profile of Mood States (POMS)"
+)
+```
+
+##### 2 Scales per Cell
+```{r}
+scales.DASS.PSS.synonyms <- c(
+  "Depression, Anxiety\nand Stress Scale (DASS) 26, Perceived Stress Scale\n(PSS)27,28",
+  "Depression, Anxiety, and Stress Scale – 21 (DASS-21),\nPerceived Stress Scale (PSS)",
+  "Depression, Anxiety, and Stress Scale – 21 (DASS-21),subscale stress\nPerceived Stress Scale (PSS)"
+)
+
+scales.PSS.DASS.synonyms <- c(
+  "Perceived Stress Scale (PSS), Depression Anxiety and Stress Scale (DASS) - Stress Subcale"
+)
+```
+
+##### Anxiety
+```{r}
+scale.SAS.synonyms <- c(
+  "Self-Rating Anxiety Scale (SAS) (Zung, 1971)"
+)
+
+scale.STAI.synonyms <- c(
+  "State Anxiety Scale from the State–Trait Anxiety Inventory (Spielberger, Gorsuch, Lushene, Vagg, & Jacobs, 1983)",
+  "State-Trait Anxiety Inventory (STAI)",
+  "State-Trait Anxiety Inventory (S-TAI) - state (SAI)",
+  "state-trait anxiety inventory (STAI) -  state anxiety",
+  "State-Trait Anxiety Inventory (STAI) - state subscale",
+  "State-Trait Anxiety Inventory (STAI) - trait subscale"
+)
+```
+
+##### Depression
+```{r}
+scale.BDI.synonyms <- c(
+  "Beck Depression Inventory (BDI [72])",
+  "Beck Depression Inventory (BDI)"
+)
+
+scale.PHQ.9.synonyms <- c(
+  "Patient Health Questionnaire-9 (PHQ-9; Kroenke & Spitzer, 2002)",
+  "Patient Health Questionnaire-9 (PHQ-9)",
+  " Patient Health Questionnaire-9 (PHQ-9)"
+)
+
+scale.QIDS.SR.synonyms <- c(
+  "Quick Inventory of Depressive Symptomatology Self-Report (QIDS-SR)"
+)
+
+scale.SDS.synonyms <- c(
+  "Self-Rating Depression Scale (SDS) (Zung et al., 1965)"
+)
+```
+
+##### Stress
+```{r}
+scale.PSS.synonyms <- c(
+  "Perceived Stress Scale (PSS; Cohen, Kamarck, & Mermelstein, 1983)",
+  "The Perceived Stress Scale (PSS)",
+  "Perceived Stress Scale (PSS).16",
+  "Perceived Stress Scale (PSS-10; Cohen, Kamarck, & Mermelstein, 1983)",
+  "Perceived Stress Scale (PSS)",
+  "Perceived Stress Scale (PSS) (Cohen et al., 1983)",
+  "Perceived Stress Scale (PSS) [58,59]",
+  "The Perceived Stress Scale (PSS; Cohen, Kamark, & Mermelstein, 1983)",
+  "Perceived Stress Scale (PSS; Cohen et al., 1994)",
+  "Perceived Stress Scale (PSS-10) (Cohen, 2017)",
+  "erceived Stress Scale (PSS [74])"
+)
+
+scale.BRS.synonyms <- c(
+  " Behavioral Relaxation Scale"
+)
+```
+
+##### Well-Being
+```{r}
+scale.CPIwb.synonyms <- c(
+  "California Psychological Inventroy (CPI), subscale sense of well-being"
+)
+
+scale.LSS.synonyms <- c(
+  "Questionnaire for the Assessment of Happiness ( ger.: Lebensglückskala, LSS) (Ciccarello & Reinhard, 2014)"
+)
+
+scale.RAND.synonyms <- c(
+  "RAND 36-Item Health Survey, concept emotional wellbeing"
+)
+
+scale.SWLS.synonyms <- c(
+  "Satisfaction with Life Scale (SWLS [71])",
+  "Satisfaction with Life Scale (SWLS)",
+  "satisfaction with life scale (SWLS; Diener et al., 1985)"
+)
+
+scale.WHO.QOL.BREF.synonyms <- c(
+  "World Health Organization Quality of Life-Brief (WHO-QOL-BREF)"
+)
+```
+
+#### Resilience Factors
+##### Coping flexibility
+```{r}
+scale.COPE.synonyms <- c(
+  "Coping Style (Brief COPE) (Brief COPE; Carver, 1997)"
+)
+```
+
+
+##### Coping, positive
+```{r}
+scale.not.common.positive.coping.synonyms <- c(
+  "scales adapted from a\nwell-known set of brief measures developed by the Fetzer Institute (1999, pp. 86–87) - positve coping subscale"
+)
+```
+
+##### Empathy
+```{r}
+scale.BEA.synonyms <- c(
+  "Batson Empathy Adjectives (BEA; Batson, 1986; Coke, Batson, & McDavis, 1978)"
+)
+```
+
+##### Mindfulness
+```{r}
+scale.CAMS.R.synonyms <- c(
+  "Cognitive and Affective Mindfulness Scale-Revised (CAMS-R)",
+  "Cognitive and Affective Mindfulness Scale-Revised (CAMS-R) - acceptace subscale",
+  "Cognitive and Affective Mindfulness Scale–Revised (CAMS-R; Feldman, Hayes, Kumar, Greeson, & Laurenceau, 2007)",
+  "Cognitive and Affective Mindfulness Scale – Revised (CAMS-R)",
+  "Cognitive and Affective Mindfulness\nScale-Revised (CAMS-R; Feldman et al., 2007)"
+)
+
+scale.FFMQ.synonyms <- c(
+  "Five Factor Mindfulness Questionnaire (FFMQ) [60].",  # mistake in paper --> Factor = Facet
+  "Five Facet Mindfulness Questionnaire (FFMQ; Baer, Smith, Hopkins, Krietemeyer, & Toney, 2006)"
+)
+
+scale.FMI.14.synonyms <- c(
+  "Freiburg Mindfulness Inventory (FMI-14) (Buchheld & Walach, 2002)"
+)
+
+scale.KIMS.synonyms <- c(
+  "Kentucky Inventory of Mindfulness Skills (KIMS; Baer et al., 2004)"
+)
+
+scale.MAAS.synonyms <- c(
+  "Mindfulness Attention Awareness Scale (MAAS) (Brown and Ryan (2003)",
+  "Mindfulness Attention Awareness Scale (MAAS) (Brown & Ryan, 2003)",
+  "mindful attention awareness scale (MAAS; Brown and Ryan, 2003)"
+)
+
+scale.TMS.synonyms <- c(
+  "The Toronto Mindfulness Scale (TMS)"
+)
+```
+
+##### Positve Emotion
+```{r}
+scale.SHS.synonyms <- c(
+  "Subjective Happiness Scale (SHS)"
+)
+```
+
+
+##### Psychological Capital
+```{r}
+scale.PCQ.synonyms <- c(
+  "Psychological Capital\nQuestionnaire (PCQ) 19"
+)
+```
+
+##### Self-acceptance
+```{r}
+scale.CPIsa.synonyms <- c(
+  "California Psychological Inventory French version (CPI) (Gough 1957) - Subscale Self-acceptance (Sa)",
+  "California Psychological Inventory French version (CPI)"
+)
+```
+
+##### Self-compassion
+```{r}
+scale.SCS.synonyms <- c(
+  "Self-Compassion Scale (SCS; Neff, 2003a)"
+)
+
+scale.SCS.SF.synonyms <- c(
+  "Self-Compassion Survey Short-Form (SCS-SF)"
+)
+```
+
+##### Self-esteem
+```{r}
+scale.RSES.synonyms <- c(
+  "Rosenberg Self-Esteem Scale (RSES; Rosenberg, 1965)"
+)
+```
+
+#### Set unique scale names
+```{r}
+for (study in 1:study.no) {
+  for (outcome in 1:7){
+    outcome.measure <- outcome.measures.df.list[[study]][outcome,"Measures.Name"]
+    if (
+      !(is.na(outcome.measure) |
+        outcome.measure == "NA" |
+        outcome.measure == nm.placeholder |
+        outcome.measure == as.character(nm.placeholder)
+      )
+    ){
+# Resilience
+      if (outcome.measure %in% scale.CD.RISC.10.synonyms){
+        outcome.measures.df.list[[study]][outcome,"Measures.Name"] <- "Connor-Davidson Resilience Scale (CD-RISC-10)"
+# Mental health-related
+  ## Including Subscales
+      } else if (outcome.measure %in% scale.DASS.synonyms){
+        outcome.measures.df.list[[study]][outcome,"Measures.Name"] <- "Depression Anxiety and Stress Scale (DASS)"
+      } else if (outcome.measure %in% scale.POMS.synonyms){
+        outcome.measures.df.list[[study]][outcome,"Measures.Name"] <- "Profile of Mood States (POMS)"
+  ## 2 Scales per cell
+      } else if (outcome.measure %in% scales.DASS.PSS.synonyms){
+        outcome.measures.df.list[[study]][outcome,"Measures.Name"] <- "Depression Anxiety and Stress Scale (DASS), Perceived Stress Scale (PSS)"
+      } else if (outcome.measure %in% scales.PSS.DASS.synonyms){
+        outcome.measures.df.list[[study]][outcome,"Measures.Name"] <- "Perceived Stress Scale (PSS), Depression Anxiety and Stress Scale (DASS)"
+  ## Anxiety
+      } else if (outcome.measure %in% scale.SAS.synonyms){
+        outcome.measures.df.list[[study]][outcome,"Measures.Name"] <- "Self-Rating Anxiety Scale (SAS)"
+      } else if (outcome.measure %in% scale.STAI.synonyms){
+        outcome.measures.df.list[[study]][outcome,"Measures.Name"] <- "State-Trait Anxiety Inventory (STAI)"
+  ## Depression
+      } else if (outcome.measure %in% scale.BDI.synonyms){
+        outcome.measures.df.list[[study]][outcome,"Measures.Name"] <- "Beck Depression Inventory (BDI)"
+      } else if (outcome.measure %in% scale.PHQ.9.synonyms){
+        outcome.measures.df.list[[study]][outcome,"Measures.Name"] <- "Patient Health Questionnaire-9 (PHQ-9)"
+      } else if (outcome.measure %in% scale.QIDS.SR.synonyms){
+        outcome.measures.df.list[[study]][outcome,"Measures.Name"] <- "Quick Inventory of Depressive Symptomatology Self-Report (QIDS-SR)"
+      } else if (outcome.measure %in% scale.SDS.synonyms){
+        outcome.measures.df.list[[study]][outcome,"Measures.Name"] <- "Self-Rating Depression Scale (SDS)"
+  ## Stress
+      } else if (outcome.measure %in% scale.PSS.synonyms){
+        outcome.measures.df.list[[study]][outcome,"Measures.Name"] <- "Perceived Stress Scale (PSS)"
+      } else if (outcome.measure %in% scale.BRS.synonyms){
+        outcome.measures.df.list[[study]][outcome,"Measures.Name"] <- "Behavioral Relaxation Scale (BRS)"
+  ## Quality of Life
+      } else if (outcome.measure %in% scale.CPIwb.synonyms){
+        outcome.measures.df.list[[study]][outcome,"Measures.Name"] <- "California Psychological Inventroy (CPI), subscale sense of well-being"
+      } else if (outcome.measure %in% scale.LSS.synonyms){
+        outcome.measures.df.list[[study]][outcome,"Measures.Name"] <- "Lebensglueckskala (LSS)"
+      } else if (outcome.measure %in% scale.RAND.synonyms){
+        outcome.measures.df.list[[study]][outcome,"Measures.Name"] <- "RAND 36-Item Health Survey, concept emotional wellbeing"
+      } else if (outcome.measure %in% scale.SWLS.synonyms){
+        outcome.measures.df.list[[study]][outcome,"Measures.Name"] <- "Satisfaction with Life Scale (SWLS)"
+      } else if (outcome.measure %in% scale.WHO.QOL.BREF.synonyms){
+        outcome.measures.df.list[[study]][outcome,"Measures.Name"] <- "World Health Organization Quality of Life-Brief (WHO-QOL-BREF)"
+# Resilience factors
+  ## Coping flexibility
+      } else if (outcome.measure %in% scale.COPE.synonyms){
+        outcome.measures.df.list[[study]][outcome,"Measures.Name"] <- "Coping Style (Brief COPE)"
+  ## Coping, positve
+      } else if (outcome.measure %in% scale.not.common.positive.coping.synonyms){
+        outcome.measures.df.list[[study]][outcome,"Measures.Name"] <- "Positve coping subscale (adapted from scales of the Fetzer Institute)"
+  ## Empathy
+      } else if (outcome.measure %in% scale.BEA.synonyms){
+        outcome.measures.df.list[[study]][outcome,"Measures.Name"] <- "Batson Empathy Adjectives (BEA; Batson, 1986; Coke, Batson, & McDavis, 1978)"
+  ## Mindfulness
+      } else if (outcome.measure %in% scale.CAMS.R.synonyms){
+        outcome.measures.df.list[[study]][outcome,"Measures.Name"] <- "Cognitive and Affective Mindfulness Scale-Revised (CAMS-R)"
+      } else if (outcome.measure %in% scale.FFMQ.synonyms){
+        outcome.measures.df.list[[study]][outcome,"Measures.Name"] <- "Five Facet Mindfulness Questionnaire (FFMQ)"
+      } else if (outcome.measure %in% scale.FMI.14.synonyms){
+        outcome.measures.df.list[[study]][outcome,"Measures.Name"] <- "Freiburg Mindfulness Inventory (FMI-14)"
+      } else if (outcome.measure %in% scale.KIMS.synonyms){
+        outcome.measures.df.list[[study]][outcome,"Measures.Name"] <- "Kentucky Inventory of Mindfulness Skills (KIMS)"
+      } else if (outcome.measure %in% scale.MAAS.synonyms){
+        outcome.measures.df.list[[study]][outcome,"Measures.Name"] <- "Mindfulness Attention Awareness Scale (MAAS)"
+      } else if (outcome.measure %in% scale.TMS.synonyms){
+        outcome.measures.df.list[[study]][outcome,"Measures.Name"] <- "The Toronto Mindfulness Scale (TMS)"
+  ## Positive Emotion
+      } else if (outcome.measure %in% scale.SHS.synonyms){
+        outcome.measures.df.list[[study]][outcome,"Measures.Name"] <- "Subjective Happiness Scale (SHS)"
+  ## Psychological Capital
+      } else if (outcome.measure %in% scale.PCQ.synonyms){
+        outcome.measures.df.list[[study]][outcome,"Measures.Name"] <- "Psychological Capital Questionnaire (PCQ)"
+  ## Self-acceptance
+      } else if (outcome.measure %in% scale.CPIsa.synonyms){
+        outcome.measures.df.list[[study]][outcome,"Measures.Name"] <- "California Psychological Inventory French version (CPI)"
+  ## Self-compassion
+      } else if (outcome.measure %in% scale.SCS.synonyms){
+        outcome.measures.df.list[[study]][outcome,"Measures.Name"] <- "Self-Compassion Scale (SCS)"
+      } else if (outcome.measure %in% scale.SCS.SF.synonyms){
+        outcome.measures.df.list[[study]][outcome,"Measures.Name"] <- "Self-Compassion Survey Short-Form (SCS-SF)"
+  ## Self-esteem
+      } else if (outcome.measure %in% scale.RSES.synonyms){
+        outcome.measures.df.list[[study]][outcome,"Measures.Name"] <- "Rosenberg Self-Esteem Scale (RSES)"
+      } else {
+        cat(
+          "unknown case:", outcome.measure, "\n",
+          "study: ", study.names[study], "\n\n"
+          )
+      }
+    }
+  }
+}
+
+```
+
+### Delivery Mode
+```{r}
+# get all unique delivery mode entries
+delivery.modes <- c()
+for (study in 1:study.no){
+  for (intervention in 1:nrow(intervention.comparisons.df.list[[1]])){
+    delivery.mode <- intervention.comparisons.df.list[[study]][intervention,"Delivery.Mode"]
+    
+    if (
+      !is.na(delivery.mode) &
+      !(delivery.mode %in% c("NA", nm.placeholder, "nm.placeholder"))
+    )
+    delivery.modes <- append(
+      delivery.modes,
+      intervention.comparisons.df.list[[study]][intervention,"Delivery.Mode"]
+    )
+  }
+}
+
+unique.delivery.modes <- unique(delivery.modes)
+unique.delivery.modes
+```
+
+```{r}
+# cluster delivery modes
+delivery.synch.presence <- c(
+  
+)
+
+delivery.synch.virtual <- c(
+  
+)
+
+delivery.asynch.virtual <- c(
+  
+)
+
+delivery.self <- c(
+  
+)
+
+delivery.synch.presence..self <- c(
+  "Synchronous guiding in presence (e.g. seminar), Self-conducted meditation"
+)
+
+```
+
+
+```{r}
+intervention.comparisons.df.list
+```
+
+```{r}
+intervention.comparisons.df.list[[28]][1,"Delivery.Mode"]
+```
+
+
+## Fill empty n, mean age, and sex values
+### n
+```{r}
+# set correct n from Population Characteristics to descriptive results
+methods.excluding.subjects <- c(
+  "Per-protocol analysis",
+  "Listwise or case deletion",
+  "Pairwise deletion",
+  "NA",
+  NA,
+  "Not mentioned",
+  "not mentioned"
+)
+
+methods.keeping.n.of.t0 <- c(
+  "Intention-to-treat (ITT)",
+  "Baseline observation carried forward (BOCF)",
+  "Best Obeservation Carried Forward",
+  "Expectation-Maximization",
+  "Last observation carried forward (LOCF)",
+  "Maximum likelihood",
+  "Mean substitution",
+  "Multiple imputation",
+  "Regression imputation",
+  "Sensitivity analysis"  # in this case values of ITT are inserted if present
+)
+
+
+for (study in 1:study.no){
+  for (scale in 1:2){
+    for (outcome in 1:7){
+      for (t in 1:4){
+        for (intervention in 1:4){
+          int.name <- intervention.comparisons.df.list[[study]][intervention, "Name"]
+          no.incl.outcomes <- one.D.info.df[study, "Number.of.included.Outcomes"]
+          if (grepl(",", outcome.measures.df.list[[study]][outcome, "Measures.Name"])){
+            # the value of "Measures.Name" is devided in 2 scale names by a comma
+            no.used.scales.per.outcome <- 2
+          } else {
+            no.used.scales.per.outcome <- 1
+          }
+          if (
+            !(is.na(int.name) | int.name == "NA") &
+            (outcome <= no.incl.outcomes) &
+            (scale <= no.used.scales.per.outcome)
+          ){ 
+            value <- results.descriptive.array[intervention, "n", t, outcome, scale, study]
+            imputation <- one.D.info.df[study,"Imputation.of.missing.Data"]
+            ITT.PP.analysis <- one.D.info.df[study,"ITT.or.Per.Protocol.Analysis.present."]
+            if (is.character(value)){
+              cat("value is character but should be double instead:", value)
+            } else if (is.na(value) | value == nm.placeholder){
+
+              if (
+                imputation %in% methods.excluding.subjects &
+                ITT.PP.analysis %in% methods.excluding.subjects
+              ){
+                n <- population.characteristics.array["No.Participants", intervention, t, study]
+                if ((is.na(n)) & t == 4){
+                  n <- population.characteristics.array["No.Participants", intervention, t - 1, study]
+                  if (is.na(n)){
+                    n <- population.characteristics.array["No.Participants", intervention, t - 2, study]
+                    if (is.na(n)){
+                      n <- population.characteristics.array["No.Participants", intervention, t - 3, study]
+                      if (is.na(n)){
+                        cat(
+                          "ERROR#1: no n of present intervention of study:", study.names[study], "\n",
+                          "intervention:", intervention, "\n",
+                          "n:", n, "\n\n"
+                        )
+                      }
+                    }
+                  }
+                } else if ((is.na(n)) & t == 3){
+                  n <- population.characteristics.array["No.Participants", intervention, t - 1, study]
+                  if (is.na(n)){
+                    n <- population.characteristics.array["No.Participants", intervention, t - 2, study]
+                    if (is.na(n)){
+                      cat(
+                        "ERROR#2: no n of present intervention of study:", study.names[study], "\n",
+                        "intervention:", intervention, "\n",
+                        "n:", n, "\n\n"
+                      )
+                    }
+                  }
+                } else if ((is.na(n)) & t == 2){
+                  n <- population.characteristics.array["No.Participants", intervention, t - 1, study]
+                  if (is.na(n)){
+                    cat(
+                      "ERROR#3: no n of present intervention of study:", study.names[study], "\n",
+                      "intervention:", intervention, "\n",
+                      "n:", n, "\n\n"
+                    )
+                  }
+                }
+
+              } else if (
+                imputation %in% methods.keeping.n.of.t0 |
+                ITT.PP.analysis %in% methods.keeping.n.of.t0
+              ){
+                n <- population.characteristics.array["No.Participants", intervention, 1, study]
+                # for ITT: "once randomized, always analyzed" --> n = n of T0
+                if (is.na(n)){
+                  cat("ERROR#5: no n of present intervention of study:", study.names[study], "\n")
+                }
+
+              } else {
+                cat(
+                  "Unknown case #1, find solution\n",
+                  "Study: ", study.names[study], "\n",
+                  "Imputation of missing Data:", one.D.info.df[study,"Imputation.of.missing.Data"], "\n",
+                  "ITT or Per-Protocol-Analysis:", one.D.info.df[study,"ITT.or.Per.Protocol.Analysis.present."], "\n",
+                  "n:", n, "\n\n"
+                   )
+              }
+              results.descriptive.array[intervention, "n", t, outcome, scale, study] <- n
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+```{r}
+print.array.not.na(population.characteristics.array)
+```
+
+## Put total data into a list
+```{r}
+m.data.list <- list(
+    one.D.info.df,
+    population.characteristics.array,
+    intervention.comparisons.df.list,
+    outcome.measures.df.list,
+    results.descriptive.array,
+    results.quantitative.array,
+    results.qualitative.df.list,
+    dates.measuring.time.points.df,
+    between.T.duration.df,
+    outcome.definitions.df,
+    outcome.names.df,
+    meditation.techniques.df
+)
+
+names(m.data.list) <- c(
+    "one.D.info.df",
+    "population.characteristics.array",
+    "intervention.comparisons.df.list",
+    "outcome.measures.df.list",
+    "results.descriptive.array",
+    "results.quantitative.array",
+    "results.qualitative.df.list",
+    "dates.measuring.time.points.df",
+    "between.T.duration.df",
+    "outcome.definitions.df",
+    "outcome.names.df",
+    "meditation.techniques.df"
+)
+```
+
+# Meta-Analyses
+# =============
+## Functions
+```{r}
+# install.packages("esc")
+# install.packages("meta")
+# install.packages("metafor")
+# install.packages('ggplot2')
+library("esc")
+library("meta")
+library("metafor")
+library("ggplot2")
+```
+
+```{r}
+test <- c("test")
+test <- append(
+  test,
+  NA
+)
+lengthtest
+```
+
+```{r}
+intervention.comparisons.df.list[1]
+```
+
+
+### Get regression factor data
+```{r}
+get.regression.data <- function(
+    m.data.list, regression.factor, study, intervention.no, nm.placeholder
+){
+  if (
+    !is.na(m.data.list[["intervention.comparisons.df.list"]][[study]][intervention.no, regression.factor]) &
+    m.data.list[["intervention.comparisons.df.list"]][[study]][intervention.no, regression.factor] != "NA" &
+    m.data.list[["intervention.comparisons.df.list"]][[study]][intervention.no, regression.factor] != nm.placeholder &
+    m.data.list[["intervention.comparisons.df.list"]][[study]][intervention.no, regression.factor] != as.character(nm.placeholder)
+  ){
+    regression.data <- m.data.list[["intervention.comparisons.df.list"]][[study]][intervention.no, regression.factor]
+  } else {
+    regression.data <- NA
+  }
+  return(regression.data)
+}
+```
+
+
+### Meta results and plots by outcome and meditation type
+```{r}
+meta.analyze <- function(
+  outcome, meditation.types, m.data.list, time.point, preferred.scale = FALSE,
+  print.forest = FALSE, print.funnel = FALSE, print.meta.results = FALSE,
+  print.descriptive = FALSE, regression.factor = FALSE,
+  return.data = FALSE, filter.vec = FALSE, sort.by = FALSE
+    # meditation.types = vector of meditation types
+    # preferred.scale = preferred scale in case of 2 scales for one outcome (Stress)
+){
+  study.id <- c()
+
+# Set Variables
+## Descriptive Results
+  n.int <- c()
+  n.control <- c()
+  mean.int <- c()
+  mean.control <- c()
+  sd.int <- c()
+  sd.control <- c()
+
+## Meta-Regression Factors
+  sessions.duration <- c()
+  sessions.frequency <- c()
+  programs.duration <- c()
+  delivery.mode <- c()
+
+## Meta-Regressions Vectors for Loops
+  regression.factors <- c(
+    "Sessions.Duration.in.minutes", "Frequency.in.times.per.week", "Total.Duration.in.Days", "Delivery.Mode"
+  )
+  regression.factor.vecs <- c(
+    sessions.duration, sessions.frequency, programs.duration, delivery.mode
+  )
+
+#___For other than Stress (Outcomes with one scale per outcome per study)___#
+  if (preferred.scale == FALSE){
+    for (study in 1:study.no){
+      int.per.study <- 0
+      for (outcome.no in 1:7){
+        for (intervention.no in 1:4){
+          results.descriptive.array <- m.data.list[["results.descriptive.array"]]
+          if (
+            m.data.list[["outcome.names.df"]][study, sprintf("Name.of.Outcome.%d", outcome.no)] == outcome &
+            !(
+              is.na(m.data.list[["intervention.comparisons.df.list"]][[study]][intervention.no,"Name"]) |
+              m.data.list[["intervention.comparisons.df.list"]][[study]][intervention.no,"Name"] == "NA" |
+              m.data.list[["intervention.comparisons.df.list"]][[study]][intervention.no,"Name"] == nm.placeholder |
+              m.data.list[["intervention.comparisons.df.list"]][[study]][intervention.no,"Name"] == as.character(nm.placeholder)
+            ) &
+            (
+              m.data.list[["meditation.techniques.df"]][study, intervention.no] %in% meditation.types |
+              ((TRUE %in% (m.data.list[["meditation.techniques.df"]][study,] %in% meditation.types)) & intervention.no == 4)
+            ) &
+            !(
+              NA %in% results.descriptive.array[intervention.no,,time.point, outcome.no, "Scale.1", study] |
+              nm.placeholder %in% results.descriptive.array[intervention.no,,time.point, outcome.no, "Scale.1", study]
+            ) &
+            !(
+              NA %in% results.descriptive.array["Control",,time.point, outcome.no, "Scale.1", study] |
+              nm.placeholder %in% results.descriptive.array["Control",,time.point, outcome.no, "Scale.1", study]
+            )
+          ){
+            
+# Descriptive Results
+## For Control Group
+            if (intervention.no == 4){
+              for (i in 1:int.per.study){
+                # if n interventions are included, these refer to the control n times
+                study.id <- append(
+                  study.id,
+                  m.data.list[["one.D.info.df"]][study,"Study.ID"]
+                )
+                
+                n.control <- append(
+                  n.control,
+                  results.descriptive.array[intervention.no, "n", time.point, outcome.no, "Scale.1", study]
+                )
+                mean.control <- append(
+                  mean.control,
+                  results.descriptive.array[intervention.no, "Mean", time.point, outcome.no, "Scale.1", study]
+                )
+                sd.control <- append(
+                  sd.control,
+                  results.descriptive.array[intervention.no, "SD", time.point, outcome.no, "Scale.1", study]
+                )
+              }
+            
+## For Intervention
+            } else {
+              n.int <- append(
+                n.int,
+                results.descriptive.array[intervention.no, "n", time.point, outcome.no, "Scale.1", study]
+              )
+              mean.int <- append(
+                mean.int,
+                results.descriptive.array[intervention.no, "Mean", time.point, outcome.no, "Scale.1", study]
+              )
+              sd.int <- append(
+                sd.int,
+                results.descriptive.array[intervention.no, "SD", time.point, outcome.no, "Scale.1", study]
+              )
+              
+              int.per.study <- int.per.study + 1
+            }
+            
+# Results for Meta-Regression
+            # add values for meta-regression to respective vector
+            for (i in 1:length(regression.factors)){
+              regression.factor.vecs[i] <- append(
+                regression.factor.vecs[i], 
+                get.regression.data(m.data.list, regression.factors[i], study, intervention.no, nm.placeholder)
+              )
+            }
+          }
+        }
+      }
+    }
+
+#___For Stress (Sometimes 2 scales per study per outcome)___#
+  } else if (preferred.scale != FALSE){
+    for (study in 1:study.no){
+      int.per.study <- 0
+      for (scale in 1:2){
+        for (outcome.no in 1:7){
+          for (intervention.no in 1:4){
+            results.descriptive.array <- m.data.list[["results.descriptive.array"]]
+
+            if (
+              m.data.list[["outcome.names.df"]][study, sprintf("Name.of.Outcome.%d", outcome.no)] == outcome &
+              !(
+                is.na(m.data.list[["intervention.comparisons.df.list"]][[study]][intervention.no,"Name"]) |
+                m.data.list[["intervention.comparisons.df.list"]][[study]][intervention.no,"Name"] == "NA" |
+                m.data.list[["intervention.comparisons.df.list"]][[study]][intervention.no,"Name"] == nm.placeholder |
+                m.data.list[["intervention.comparisons.df.list"]][[study]][intervention.no,"Name"] == as.character(nm.placeholder)
+              ) &
+              (
+                m.data.list[["meditation.techniques.df"]][study, intervention.no] %in% meditation.types |
+                ((TRUE %in% (m.data.list[["meditation.techniques.df"]][study,] %in% meditation.types)) & intervention.no == 4)
+              ) &
+              !(
+                NA %in% results.descriptive.array[intervention.no,,time.point, outcome.no, scale, study] |
+                nm.placeholder %in% results.descriptive.array[intervention.no,,time.point, outcome.no, scale, study]
+              ) &
+              !(
+                NA %in% results.descriptive.array["Control",,time.point, outcome.no, scale, study] |
+                nm.placeholder %in% results.descriptive.array["Control",,time.point, outcome.no, scale, study]
+              )
+            ){
+
+# skip iteration if 2 scales per outcome are present and current scale is not the preferred one
+              scale.name <- m.data.list[["outcome.measures.df.list"]][[study]][sprintf("Outcome.%d", outcome.no), "Measures.Name"]
+              if (multiple.commas.present(scale.name)){
+                cat("multiple commas in scale name, find solution:", scale.name, "\n\n")
+                next
+              } else if (grepl(",", scale.name)){  # comma = 2 scales per outcome
+                if (scale == 1){
+                  scale.name.substring <- sub(",.*", "", scale.name)
+                    # extracts substring before comma
+                  if (!grepl(gsub("([()])","\\\\\\1", preferred.scale), scale.name.substring)){
+                    # grepl(gsub("([()])","\\\\\\1", preferred.scale) makes parenthesis in preferred.scale searchable
+                    next
+                  }
+                } else if (scale == 2){
+                  scale.name.substring <- sub(".*,", "", scale.name)
+                    # extracts substring after comma
+                  if (!grepl(gsub("([()])","\\\\\\1", preferred.scale), scale.name.substring)){
+                    next
+                  }
+                }
+              }
+
+# Descriptive Results
+## for control group
+              if (intervention.no == 4){
+                for (i in 1:int.per.study){
+                  # if n interventions are included, these refer to the control n times
+                  study.id <- append(
+                    study.id,
+                    m.data.list[["one.D.info.df"]][study,"Study.ID"]
+                  )
+                  
+                  n.control <- append(
+                    n.control,
+                    results.descriptive.array[intervention.no, "n", time.point, outcome.no, scale, study]
+                  )
+                  mean.control <- append(
+                    mean.control,
+                    results.descriptive.array[intervention.no, "Mean", time.point, outcome.no, scale, study]
+                  )
+                  sd.control <- append(
+                    sd.control,
+                    results.descriptive.array[intervention.no, "SD", time.point, outcome.no, scale, study]
+                  )
+                }
+              
+## for intervention
+              } else {
+                # add descriptive results to respective vector
+                n.int <- append(
+                  n.int,
+                  results.descriptive.array[intervention.no, "n", time.point, outcome.no, scale, study]
+                )
+                mean.int <- append(
+                  mean.int,
+                  results.descriptive.array[intervention.no, "Mean", time.point, outcome.no, scale, study]
+                )
+                sd.int <- append(
+                  sd.int,
+                  results.descriptive.array[intervention.no, "SD", time.point, outcome.no, scale, study]
+                )
+                
+                int.per.study <- int.per.study + 1
+              }
+              
+# Results for meta-regression
+              # add values for meta-regression to respective vector
+              for (i in 1:length(regression.factors)){
+                regression.factor.vecs[i] <- append(
+                  regression.factor.vecs[i], 
+                  get.regression.data(m.data.list, regression.factors[i], study, intervention.no, nm.placeholder)
+                )
+                print(get.regression.data(m.data.list, regression.factors[i], study, intervention.no, nm.placeholder))
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  pooled.sd <- sqrt((((n.int - 1) * sd.int^2) + ((n.control - 1) * sd.control^2)) / (n.int + n.control -2))
+  mean.diff <- mean.int - mean.control
+  hedges.g <- mean.diff / pooled.sd 
+  weights <- 1/sqrt(pooled.sd)
+  
+  cat(length(study.id), length(n.control), length(n.int), length(regression.factor.vecs[1]))
+  
+  meta.df <- data.frame(
+    study.id =	study.id,
+    n.control =	n.control,
+    mean.control =	mean.control,
+    sd.control =	sd.control,
+    n.int =	n.int,
+    mean.int	= mean.int,
+    sd.int	= sd.int,
+    pooled.sd = pooled.sd,
+    mean.diff = mean.diff,
+    hedges.g = hedges.g,
+    weights = weights,
+    sessions.duration = regression.factor.vecs[1],
+    sessions.frequency = regression.factor.vecs[2],
+    programs.duration = regression.factor.vecs[3],
+    delivery.mode = regression.factor.vecs[4]
+  )
+
+# sort studies
+  if (sort.by == "hedges g"){
+    meta.df <- arrange(meta.df, hedges.g)
+  } else if (sort.by == "name"){
+    meta.df <- arrange(meta.df, study.id)
+  } else if (sort.by != FALSE){
+    cat('\n\nsort by "hedges g" or "name"\n\n')
+  }
+
+# filter for studies for clustering
+  if (!FALSE %in% filter.vec){
+    meta.df <- meta.df[filter.vec,]
+  }
+
+# get results df for forest plot
+  results.forest.df <- metacont(
+    n.int, mean.int, sd.int,
+    n.control, mean.control, sd.control,
+    fixed = T, random = T, studlab = study.id,
+    data = meta.df, sm = "SMD"
+  )
+
+# Forest plot and descriptive & meta-results
+  if (print.descriptive){
+    print(meta.df)
+  }
+
+  if (print.meta.results){
+    print(results.forest.df)
+  }
+
+  if (print.forest){
+    label.add <- ""
+    if (preferred.scale != FALSE){
+      if (grepl("PSS", preferred.scale)){
+        label.add <- " (prefrerred scale: PSS)"
+      } else if (grepl("DASS", preferred.scale)){
+        label.add <- " (prefrerred scale: DASS)"
+      } 
+    }
+    forest(
+      results.forest.df, leftcols = c('studlab'),
+      plotwidth = "4cm",
+      label.left = paste(outcome, label.add)
+    )
+  }
+
+# Funnel plot
+  # get results for funnel and meta-regression plot
+  results.yi.vi <- escalc(
+    measure = "SMD",
+    m1i = meta.df[,"mean.int"], sd1i = meta.df[,"sd.int"], n1i = meta.df[,"n.int"],
+    m2i = meta.df[,"mean.control"], sd2i = meta.df[,"sd.control"], n2i = meta.df[,"n.control"]
+  )
+
+  results.funnel <- rma(
+    yi = results.yi.vi[,"yi"], vi = results.yi.vi[,"vi"], measure="SMD"
+  )
+    # method argument is set default to:
+    # method="REML" = restricted maximum likelihood estimator (Viechtbauer, 2005; Raudenbush, 2009)
+  
+  if (print.funnel){
+    # # with {meta}
+    # funnel(results.forest.df)
+
+    # with {metafor}
+    trim.and.fill <- trimfill(results.funnel)
+
+    funnel(trim.and.fill, legend=TRUE)
+  }
+
+# Meta-Regression
+## Session's Duration
+  if (regression.factor == "sessions.duration"){
+    # Specify basic plot, mapping regression.factor to the x-axis, effect size 'hedges.g' to the y-axis,
+    # and 'weights' to the weight parameter.
+    ggplot(meta.df, aes(x = sessions.duration, y = hedges.g, size = weights)) +
+      geom_point(shape = 1) + # Add scatter
+      geom_abline(intercept = random.effects.model$b[1], slope = random.effects.model$b[2]) + # Add regression line
+      theme_bw() + # Apply black and white theme
+      theme(legend.position = "none") # Remove legend
+      # see link for beatiful meta-regression with convidence intervals: https://bookdown.org/robcrystalornelas/meta-analysis_of_ecological_data/meta-regression.html#meta-regression-with-continuous-variable
+
+## Session's Frequency
+  } else if (regression.factor == "sessions.frequency"){
+    meta.df$weights <- 1/sqrt(meta.df$pooled.sd)
+    ggplot(meta.df, aes(x = sessions.frequency, y = hedges.g, size = weights)) +
+      geom_point(shape = 1) +
+      geom_abline(intercept = random.effects.model$b[1], slope = random.effects.model$b[2]) + # Add regression line
+      theme_bw() +
+      theme(legend.position = "none")
+    
+## Meditation Program's Duration
+  } else if (regression.factor == "programs.duration"){
+    meta.df$weights <- 1/sqrt(meta.df$pooled.sd)
+    ggplot(meta.df, aes(x = programs.duration, y = hedges.g, size = weights)) +
+      geom_point(shape = 1) +
+      geom_abline(intercept = random.effects.model$b[1], slope = random.effects.model$b[2]) + # Add regression line
+      theme_bw() +
+      theme(legend.position = "none")
+    
+## Delivery Mode
+  } else if (regression.factor == "delivery.mode"){
+    meta.df$weights <- 1/sqrt(meta.df$pooled.sd)
+    ggplot(meta.df, aes(x = delivery.mode, y = hedges.g, size = weights)) +
+      geom_point(shape = 1) +
+      geom_abline(intercept = random.effects.model$b[1], slope = random.effects.model$b[2]) + # Add regression line
+      theme_bw() +
+      theme(legend.position = "none")
+  }
+
+# Return Results
+  if (return.data == "descriptive"){
+    return(meta.df)
+  } else if (return.data == "meta results"){
+    return(return.data == "results forest")
+  } else if (return.data == "hedge's g"){
+    return(meta.df[, "hedges.g"])
+  }
+}
+```
+
+## Get all present outcomes names
+```{r}
+present.outcomes <- c()
+
+for (row in 1:nrow(outcome.names.df)){
+  for (col in 1:ncol(outcome.names.df)){
+    if (!(
+      is.na(outcome.names.df[row, col]) |
+      outcome.names.df[row, col] == "NA"
+    )){
+      present.outcomes <- append(present.outcomes, outcome.names.df[row, col])
+    }
+  }
+}
+
+outcomes.no.df <- data.frame(table(present.outcomes))
+outcomes.no.10.plus <- as.vector(outcomes.no.df[
+  outcomes.no.df$Freq >= 10, "present.outcomes"
+])
+
+present.outcomes <- unique(present.outcomes)
+outcomes.no.df
+```
+
+```{r}
+outcomes.no.10.plus
+```
+
+## Plots for post-test
+### All Meditation types
+```{r}
+print(1)
+meta.results <- meta.analyze(
+  "Stress", meditation.type.attentional, m.data.list, time.point = 2,
+  preferred.scale = "Perceived Stress Scale (PSS)",
+  print.meta.results = TRUE, return.data = "meta results", print.forest = TRUE,
+  print.funnel = TRUE, sort.by = "hedges g"
+)
+print(2)
+
+```
+
+```{r}
+preferred.scales <- c("Depression Anxiety and Stress Scale (DASS)", "Perceived Stress Scale (PSS)")
+
+meditation.type <- meditation.type.attentional
+
+for (outcome in present.outcomes){
+  if (outcome == "Stress"){
+    print(outcome)
+    print("Depression Anxiety and Stress Scale (DASS)")  
+    meta.analyze(
+      outcome, meditation.type, m.data.list, time.point = 2, print.forest = TRUE, print.funnel = TRUE,
+      preferred.scale = "Depression Anxiety and Stress Scale (DASS)"
+    )
+    cat("\n\n")
+ 
+    meta.analyze(
+      outcome, meditation.type, m.data.list, time.point = 2, print.forest = TRUE, print.funnel = TRUE,
+      preferred.scale = "Depression Anxiety and Stress Scale (DASS)"
+    )
+    cat("\n\n")
+
+    print("Depression Anxiety and Stress Scale (DASS)")
+    meta.analyze(
+      outcome, meditation.type, m.data.list, time.point = 2, print.forest = TRUE, print.funnel = TRUE,
+      preferred.scale = "Perceived Stress Scale (PSS)"
+    )
+    cat("\n\n")
+    print("Perceived Stress Scale (PSS)")
+  } else {
+    print(outcome)
+    
+    tryCatch(
+      {
+      meta.analyze(
+        outcome, meditation.type, m.data.list, time.point = 2, print.forest = TRUE, print.funnel = TRUE
+      )
+      
+          # try part
+      },
+      error=function(cond) {
+        message(paste("Error in outome:", outcome))
+        print(cond)
+        return("")
+        # except part for errors
+        
+      },
+      warning=function(cond) {
+        message(paste("Warning in outome:", outcome))
+        print(cond)
+        return("")
+        # except part for warnings
+        
+      }
+    )
+    cat("\n\n")
+  }
+  print("#########################################")
+}
+```
+
