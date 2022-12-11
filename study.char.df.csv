@@ -1,7 +1,7 @@
-"","Participants","Included Intervention(s)","Control","Practiced Meditation Techniques","Included Outcomes (Scale) & Evidence of Effectiveness in Between Subject Statistics"
+"","Participants","Intervention Description(s)","Intervention Characteristics","Control","Included Outcomes (Scale) & Evidence of Effectiveness in Between Subject Statistics"
 "Ratanasiripong 2015","N = 60
 
-Mean age = 19.27 Years
+Mean age [years] = 19.27
 
 Female percentage = NA
 Male percentage = NA
@@ -9,29 +9,35 @@ Diverse gender percentage = NA","""Participants in the mindfulness
 meditation group also received two trainings; however, they 
 were taught Vipassana meditation""
 
-","non-treatment control","Vipassana
-
-","Stress (PSS):  N 
+","Intervention's duration [days]: 28
+Single Session's duration [minutes]: NA
+Frequency [sessions per week]: NA
+Delivery mode: Synchronous guiding
+Meditation Technique: Vipassana
+Meditation category: Deconstructive Family","non-treatment control","Stress (PSS):  N 
 
 Anxiety (state) (STAI):  N 
 
      "
 "Sloan 2016","N = 41
 
-Mean age = 22 Years
+Mean age [years] = 22
 
 Female percentage = 65.85 %
 Male percentage = 34.15 %
 Diverse gender percentage = 0 %","""guided audio-recorded breathing meditation""
 
-","non-treatment control","Breathing Exercise (no further Info)
-
-","Stress (PSS):  Y 
+","Intervention's duration [days]: 56
+Single Session's duration [minutes]: 9
+Frequency [sessions per week]: 0.99
+Delivery mode: Asynchronous guiding
+Meditation Technique: Breathing Exercise (no further Info)
+Meditation category: Attentional Family","non-treatment control","Stress (PSS):  Y 
 
       "
 "Nidich 2009","N = 207
 
-Mean age = 25.5 Years
+Mean age [years] = 25.5
 
 Female percentage = 58.94 %
 Male percentage = 41.06 %
@@ -53,9 +59,12 @@ lowing personal instruction, verifying correctness of TM prac-
 tice, and providing the understanding of the mechanics of the
 TM technique""
 
-","waitlist control","Transcendental Meditation (TM)
-
-","Stress (POMS):  Y 
+","Intervention's duration [days]: 90
+Single Session's duration [minutes]: 20
+Frequency [sessions per week]: NA
+Delivery mode: NA
+Meditation Technique: Transcendental Meditation (TM)
+Meditation category: Attentional Family","waitlist control","Stress (POMS):  Y 
 
 Anxiety (trait) (POMS):  Y 
 
@@ -64,7 +73,7 @@ Depression (trait) (POMS):  Y
     "
 "Barry 2019","N = 82
 
-Mean age = 38.14 Years
+Mean age [years] = 38.14
 
 Female percentage = 70.83 %
 Male percentage = 29.17 %
@@ -76,9 +85,12 @@ and record sheet for the intervention group [...]) were posted to the participan
 ""spoken guided mindfulness practice of
 breath awarenes""
 
-","non-treatment control","Breathing Exercise (no further Info)
-
-","Depression (trait) (DASS):  Y 
+","Intervention's duration [days]: 56
+Single Session's duration [minutes]: 30
+Frequency [sessions per week]: 5
+Delivery mode: Asynchronous guiding
+Meditation Technique: Breathing Exercise (no further Info)
+Meditation category: Attentional Family","non-treatment control","Depression (trait) (DASS):  Y 
 
 Anxiety (trait) (DASS):  N 
 
@@ -95,7 +107,7 @@ Optimism or positive attributional style (PCQ):  N
 "
 "Chen 2013","N = 60
 
-Mean age = 19.5 Years
+Mean age [years] = 19.5
 
 Female percentage = 86.67 %
 Male percentage = 13.33 %
@@ -115,24 +127,30 @@ traditional Chinese Buddhist cultural concepts, 5 such as emphasis on the
 use of “internal eyes” to scan bodily sensations, according to the method
 used in an empirical study (Yang et al., 2011).""
 
-",NA,"Body Scan; Breathing Exercise (no further Info)
-
-","Anxiety (trait) (SAS):  N 
+","Intervention's duration [days]: 7
+Single Session's duration [minutes]: 30
+Frequency [sessions per week]: 7
+Delivery mode: Synchronous guiding
+Meditation Technique: Body Scan; Breathing Exercise (no further Info)
+Meditation category: Attentional Family",NA,"Anxiety (trait) (SAS):  N 
 
 Depression (trait) (SDS):  N 
 
      "
 "Warnecke 2011","N = 56
 
-Mean age = 23.92 Years
+Mean age [years] = 23.92
 
 Female percentage = 63.64 %
 Male percentage = 34.85 %
 Diverse gender percentage = 1.52 %","""mindfulness intervention""
 
-","waitlist control","Breathing Exercise (no further Info); Only ""Mindfulness Meditation"" named
-
-","Stress (PSS, DASS):  Y 
+","Intervention's duration [days]: 56
+Single Session's duration [minutes]: 30
+Frequency [sessions per week]: 3.3375
+Delivery mode: Asynchronous guiding
+Meditation Technique: Breathing Exercise (no further Info); Only ""Mindfulness Meditation"" named
+Meditation category: Attentional Family","waitlist control","Stress (PSS, DASS):  Y 
 
 Depression (trait) (DASS):  N 
 
@@ -141,7 +159,7 @@ Anxiety (trait) (DASS):  Y
     "
 "Gupta 2020","N = 94
 
-Mean age = 23.92 Years
+Mean age [years] = 23.92
 
 Female percentage = 42.5 %
 Male percentage = 57.5 %
@@ -149,30 +167,36 @@ Diverse gender percentage = 0 %","""The treatment given was in the form of guide
 scheduled class with participants. Participants were instructed to close their eyes and put
 their hands on their upper legs similar to other studies involving meditation sessions""
 
-","non-treatment control","Breathing Exercise (no further Info)
-
-","Mindfulness (trait) (MAAS):  Y 
+","Intervention's duration [days]: 60
+Single Session's duration [minutes]: 5
+Frequency [sessions per week]: NA
+Delivery mode: Synchronous guiding
+Meditation Technique: Breathing Exercise (no further Info)
+Meditation category: Attentional Family","non-treatment control","Mindfulness (trait) (MAAS):  Y 
 
 Well-being or quality of life (SWLS):  Y 
 
      "
 "Johnson-Waddell 2018","N = 60
 
-Mean age = 23.92 Years
+Mean age [years] = 23.92
 
 Female percentage = 70 %
 Male percentage = 30 %
 Diverse gender percentage = 0 %","""participants were sent links to the mindfulness meditation training online through email, and
 listened to the guided meditations online through YouTube""
 
-","non-treatment control","Only ""Mindfulness Meditation"" named
-
-","Mindfulness (trait) (MAAS):  N 
+","Intervention's duration [days]: 35
+Single Session's duration [minutes]: 10
+Frequency [sessions per week]: NA
+Delivery mode: Asynchronous guiding
+Meditation Technique: Only ""Mindfulness Meditation"" named
+Meditation category: Attentional Family","non-treatment control","Mindfulness (trait) (MAAS):  N 
 
       "
 "Plummer 2018","N = 94
 
-Mean age = 23 Years
+Mean age [years] = 23
 
 Female percentage = 92.55 %
 Male percentage = 7.45 %
@@ -211,9 +235,12 @@ choice/presence
 clinical setting
 4.5 Reflection and integration: living and working mindfully""
 
-","non-treatment control","Only ""Mindfulness Meditation"" named
-
-","Stress (PSS):  N 
+","Intervention's duration [days]: 140
+Single Session's duration [minutes]: 90
+Frequency [sessions per week]: NA
+Delivery mode: Synchronous guiding
+Meditation Technique: Only ""Mindfulness Meditation"" named
+Meditation category: Attentional Family","non-treatment control","Stress (PSS):  N 
 
 Mindfulness (trait) (CAMS-R):  N 
 
@@ -224,7 +251,7 @@ Acceptance (CAMS-R):  N
    "
 "Janowiak 1994","N = 62
 
-Mean age = 23 Years
+Mean age [years] = 23
 
 Female percentage = NA
 Male percentage = NA
@@ -234,13 +261,21 @@ NA
 Intervention 2 (Shavasana):
 NA
 
-","non-treatment control","Intervention 1:
-Mantra Meditation
+","Intervention 1:
+Intervention's duration [days]: 56
+Single Session's duration [minutes]: NA
+Frequency [sessions per week]: NA
+Delivery mode: Synchronous guiding
+Meditation Technique: Mantra Meditation
+Meditation category: Attentional Family
 
 Intervention 2:
-Shavasana
-
-","Stress (BRS)
+Intervention's duration [days]: 56
+Single Session's duration [minutes]: NA
+Frequency [sessions per week]: NA
+Delivery mode: Synchronous guiding
+Meditation Technique: Shavasana
+Meditation category: Attentional Family","non-treatment control","Stress (BRS)
 Intervention 1:  N 
 
 Intervention 2:  N 
@@ -248,7 +283,7 @@ Intervention 2:  N
       "
 "Oman 2007","N = 31
 
-Mean age = 23 Years
+Mean age [years] = 23
 
 Female percentage = 79.55 %
 Male percentage = 20.45 %
@@ -259,14 +294,17 @@ into daily living""
 ""Focused attention; Recalling the
 mind to a cue word; etc. Slowing down; Detachment; etc.Readings reflecting meditative perspective""
 
-","waitlist control","Mantra Meditation; Only ""Focused Attention Meditation"" named; Other: Readings reflecting meditative perspective
-
-","Religiosity or spirituality or religious coping (Positve coping subscale (adapted from scales of the Fetzer Institute)):  N 
+","Intervention's duration [days]: 56
+Single Session's duration [minutes]: 90
+Frequency [sessions per week]: 1
+Delivery mode: Synchronous guiding
+Meditation Technique: Mantra Meditation; Only ""Focused Attention Meditation"" named; Other: Readings reflecting meditative perspective
+Meditation category: Attentional Family","waitlist control","Religiosity or spirituality or religious coping (Positve coping subscale (adapted from scales of the Fetzer Institute)):  N 
 
       "
 "Weytens 2014","N = 77
 
-Mean age = 22.29 Years
+Mean age [years] = 22.29
 
 Female percentage = 77.22 %
 Male percentage = 22.78 %
@@ -280,9 +318,12 @@ Fredrickson et al. study [65], the LKM group participants were
 asked to practice 20 minutes of meditation at home, at least five
 days a week. ""
 
-","waitlist control","Loving-Kindness Meditation
-
-","Positive emotion (SHS):  N 
+","Intervention's duration [days]: 42
+Single Session's duration [minutes]: NA
+Frequency [sessions per week]: 6
+Delivery mode: Synchronous guiding
+Meditation Technique: Loving-Kindness Meditation
+Meditation category: Constructive Family","waitlist control","Positive emotion (SHS):  N 
 
 Well-being or quality of life (SWLS):  N 
 
@@ -293,7 +334,7 @@ Stress (PSS):  N
    "
 "Bonamo 2015","N = 135
 
-Mean age = 19.46 Years
+Mean age [years] = 19.46
 
 Female percentage = 100 %
 Male percentage = 0 %
@@ -316,13 +357,21 @@ Intervention 2 (45-min body scan meditation):
 ""The recordings were played to participants
 through external computer speakers.""
 
-","non-treatment control","Intervention 1:
-Body Scan
+","Intervention 1:
+Intervention's duration [days]: 1
+Single Session's duration [minutes]: 20
+Frequency [sessions per week]: 1
+Delivery mode: Asynchronous guiding
+Meditation Technique: Body Scan
+Meditation category: Attentional Family
 
 Intervention 2:
-Body Scan
-
-","Mindfulness (state) (TMS)
+Intervention's duration [days]: 1
+Single Session's duration [minutes]: 45
+Frequency [sessions per week]: 1
+Delivery mode: Asynchronous guiding
+Meditation Technique: Body Scan
+Meditation category: Attentional Family","non-treatment control","Mindfulness (state) (TMS)
 Intervention 1:  N 
 
 Intervention 2:  N 
@@ -335,7 +384,7 @@ Intervention 2:  N
      "
 "Smith 2021","N = 14
 
-Mean age = 19.46 Years
+Mean age [years] = 19.46
 
 Female percentage = 78.57 %
 Male percentage = 21.43 %
@@ -352,9 +401,12 @@ as mental contents and the nonjudgmental stance toward
 emotions, with a goal of optimizing the response to one’s""
 emotions""
 
-","waitlist control","Breathing Exercise (no further Info); Other: mindfulness toward sensations and experiences of the body, mindfulness toward the contents of the mind, skill of mental noting to label their mental contents, cultivating awareness and understanding of emotions as mental contents and the nonjudgmental stance toward emotions with a goal of optimizing the response to one’s emotions
-
-","Depression (trait) (DASS):  N 
+","Intervention's duration [days]: 56
+Single Session's duration [minutes]: 10.97
+Frequency [sessions per week]: 22.85
+Delivery mode: Asynchronous guiding
+Meditation Technique: Breathing Exercise (no further Info); Other: mindfulness toward sensations and experiences of the body, mindfulness toward the contents of the mind, skill of mental noting to label their mental contents, cultivating awareness and understanding of emotions as mental contents and the nonjudgmental stance toward emotions with a goal of optimizing the response to one’s emotions
+Meditation category: Attentional Family","waitlist control","Depression (trait) (DASS):  N 
 
 Anxiety (trait) (DASS):  N 
 
@@ -363,7 +415,7 @@ Stress (DASS):  N
     "
 "Wang 2021","N = 104
 
-Mean age = 22.8 Years
+Mean age [years] = 22.8
 
 Female percentage = 55.7 %
 Male percentage = 44.3 %
@@ -373,14 +425,17 @@ focused on teaching naïve participants the step-by-step prac-
 tice of meditation without any spiritual or religious emphasis.""
 ""MT [Meditation Training] content was a continuum from FA [Focused Attention] to OM [Open Monitoring].
 
-","non-treatment control","Breathing Exercise (no further Info); Open Monitoring Meditation
-
-","Anxiety (state) (STAI):  N 
+","Intervention's duration [days]: 4
+Single Session's duration [minutes]: 20
+Frequency [sessions per week]: 4
+Delivery mode: Asynchronous guiding
+Meditation Technique: Breathing Exercise (no further Info); Open Monitoring Meditation
+Meditation category: Attentional Family","non-treatment control","Anxiety (state) (STAI):  N 
 
       "
 "Fish 2019","N = 72
 
-Mean age = 21 Years
+Mean age [years] = 21
 
 Female percentage = 95.83 %
 Male percentage = 4.17 %
@@ -389,14 +444,17 @@ tion (see Figure 1), provides guided meditations (see Figure 2), and provides 10
 sessions. For this study, we utilized the free sessions to ensure participants encoun-
 tered no costs.""
 
-","non-treatment control","Only ""Mindfulness Meditation"" named
-
-","Depression (trait) (PHQ-9):  N 
+","Intervention's duration [days]: 14
+Single Session's duration [minutes]: 10
+Frequency [sessions per week]: NA
+Delivery mode: Asynchronous guiding
+Meditation Technique: Only ""Mindfulness Meditation"" named
+Meditation category: Attentional Family","non-treatment control","Depression (trait) (PHQ-9):  N 
 
       "
 "Siembor 2018","N = 21
 
-Mean age = 20.89 Years
+Mean age [years] = 20.89
 
 Female percentage = 66.67 %
 Male percentage = 33.33 %
@@ -406,10 +464,13 @@ intro and bells, a reminder function to meditate, mindfulness notices that help 
 your presence in the moment, and a “store” with guided meditations by some of the world’s most
 influential meditation teachers.""
 
-","non-treatment control","Other: silent meditations with bells, personalized meditations with or without guided
+","Intervention's duration [days]: 28
+Single Session's duration [minutes]: NA
+Frequency [sessions per week]: NA
+Delivery mode: Asynchronous guiding
+Meditation Technique: Other: silent meditations with bells, personalized meditations with or without guided
 intro and bells
-
-","Mindfulness (trait) (CAMS-R):  N 
+Meditation category: Attentional Family","non-treatment control","Mindfulness (trait) (CAMS-R):  N 
 
 Stress (PSS):  N 
 
@@ -418,16 +479,19 @@ Coping flexibility (Brief COPE):  N
     "
 "Lee 2018","N = 163
 
-Mean age = 20.89 Years
+Mean age [years] = 20.89
 
 Female percentage = 63.19 %
 Male percentage = 36.81 %
 Diverse gender percentage = 0 %","""mindfulness-based
 exercises through audio, video, or text files""
 
-","waitlist control","Other: mindfulness-based exercises through audio video or text files, grounding visualization, gratitude, imagining the life you want, finding meaning
-
-","Stress (PSS):  N 
+","Intervention's duration [days]: 28
+Single Session's duration [minutes]: 10
+Frequency [sessions per week]: 5
+Delivery mode: Asynchronous guiding
+Meditation Technique: Other: mindfulness-based exercises through audio video or text files, grounding visualization, gratitude, imagining the life you want, finding meaning
+Meditation category: hybrid form","waitlist control","Stress (PSS):  N 
 
 Anxiety (state) (STAI):  N 
 
@@ -440,7 +504,7 @@ Well-being or quality of life (RAND 36-Item Health Survey):  N
   "
 "Bultas 2021","N = 34
 
-Mean age = 20.89 Years
+Mean age [years] = 20.89
 
 Female percentage = 85.71 %
 Male percentage = 14.29 %
@@ -449,9 +513,12 @@ Pre-Exam Mindfulness Meditation exercise (Executive Mind,
 2016) in a separate, quiet room approximately 20 minutes prior
 to the examination""
 
-","non-treatment control","Only ""Mindfulness Meditation"" named
-
-","Stress (PSS):  N 
+","Intervention's duration [days]: 1
+Single Session's duration [minutes]: 20
+Frequency [sessions per week]: 1
+Delivery mode: Asynchronous guiding
+Meditation Technique: Only ""Mindfulness Meditation"" named
+Meditation category: Attentional Family","non-treatment control","Stress (PSS):  N 
 
 Resilience Scale (CD-RISC-10):  N 
 
@@ -460,7 +527,7 @@ Mindfulness (trait) (MAAS):  N
     "
 "Huberty 2019","N = 88
 
-Mean age = 20.89 Years
+Mean age [years] = 20.89
 
 Female percentage = NA
 Male percentage = NA
@@ -471,9 +538,12 @@ self-esteem). Calm also offers other individual guided and
 unguided (eg, a brief introductory guidance followed by a
 chosen period of silence or sounds from nature) meditations.""
 
-","waitlist control","Body Scan; Breathing Exercise (no further Info); Loving-Kindness Meditation
-
-","Stress (PSS):  N 
+","Intervention's duration [days]: 56
+Single Session's duration [minutes]: 10
+Frequency [sessions per week]: 37.9
+Delivery mode: Asynchronous guiding
+Meditation Technique: Body Scan; Breathing Exercise (no further Info); Loving-Kindness Meditation
+Meditation category: hybrid form","waitlist control","Stress (PSS):  N 
 
 Mindfulness (trait) (FFMQ):  Y 
 
@@ -482,7 +552,7 @@ Self-compassion (SCS-SF):  Y
     "
 "Tanner 2009","N = 195
 
-Mean age = 26.35 Years
+Mean age [years] = 26.35
 
 Female percentage = 60.63 %
 Male percentage = 39.37 %
@@ -494,14 +564,17 @@ thinking to the state of least mental activity. This experience of restful alert
 self-awareness devoid of customary mental content—is called transcendental
 consciousness (Maharishi, 1969; Travis & Pearson, 2000; Travis & Wallace, 1997).""
 
-","waitlist control","Transcendental Meditation (TM)
-
-","Mindfulness (trait) (KIMS):  N 
+","Intervention's duration [days]: NA
+Single Session's duration [minutes]: 30
+Frequency [sessions per week]: NA
+Delivery mode: Synchronous guiding
+Meditation Technique: Transcendental Meditation (TM)
+Meditation category: Attentional Family","waitlist control","Mindfulness (trait) (KIMS):  N 
 
       "
 "deGrace 1976","N = 23
 
-Mean age = 20 Years
+Mean age [years] = 20
 
 Female percentage = 47.83 %
 Male percentage = 52.17 %
@@ -546,16 +619,19 @@ The only important thing is that when your breathing is short, you are aware
 of it and the same when it is long.
 You will now proceed, together, according to this new modality.""
 
-","waitlist control","Zen Meditation
-
-","Self-acceptance (CPI):  N 
+","Intervention's duration [days]: 152
+Single Session's duration [minutes]: 20
+Frequency [sessions per week]: 14
+Delivery mode: NA
+Meditation Technique: Zen Meditation
+Meditation category: Attentional Family","waitlist control","Self-acceptance (CPI):  N 
 
 Well-being or quality of life (CPI):  N 
 
      "
 "Messer 2016","N = 72
 
-Mean age = 20 Years
+Mean age [years] = 20
 
 Female percentage = 66.88 %
 Male percentage = 33.12 %
@@ -568,16 +644,19 @@ course of the three-week intervention with one new exer
 -
 cise being provided each week.""
 
-","non-treatment control","Body Scan; Only ""Mindfulness Meditation"" named
-
-","Stress (PSS):  Y 
+","Intervention's duration [days]: 21
+Single Session's duration [minutes]: 16
+Frequency [sessions per week]: NA
+Delivery mode: Asynchronous guiding
+Meditation Technique: Body Scan; Only ""Mindfulness Meditation"" named
+Meditation category: Attentional Family","non-treatment control","Stress (PSS):  Y 
 
 Mindfulness (trait) (FFMQ):  N 
 
      "
 "Vasiliauskas 2013","N = 363
 
-Mean age = 21 Years
+Mean age [years] = 21
 
 Female percentage = NA
 Male percentage = NA
@@ -612,13 +691,21 @@ meditations taken from a widely used devotional book designed
 for Christian readers titled, My Utmost for His Highest (Chambers,
 1992).""
 
-","non-treatment control","Intervention 1:
-Prayer; Other: devotional readings to ponder, meditations taken from a widely used devotional book designed for Christian readers titled, forgiveness meditations
+","Intervention 1:
+Intervention's duration [days]: 16
+Single Session's duration [minutes]: NA
+Frequency [sessions per week]: NA
+Delivery mode: Asynchronous guiding
+Meditation Technique: Prayer; Other: devotional readings to ponder, meditations taken from a widely used devotional book designed for Christian readers titled, forgiveness meditations
+Meditation category: hybrid form
 
 Intervention 2:
-Other: devotional readings to ponder, meditations taken from a widely used devotional book designed for Christian readers titled
-
-","Empathy (BEA)
+Intervention's duration [days]: 16
+Single Session's duration [minutes]: NA
+Frequency [sessions per week]: NA
+Delivery mode: Asynchronous guiding
+Meditation Technique: Other: devotional readings to ponder, meditations taken from a widely used devotional book designed for Christian readers titled
+Meditation category: Deconstructive Family","non-treatment control","Empathy (BEA)
 Intervention 1:  N 
 
 Intervention 2:  N 
@@ -626,15 +713,18 @@ Intervention 2:  N
       "
 "Nolan 2020","N = 66
 
-Mean age = 21 Years
+Mean age [years] = 21
 
 Female percentage = 78.79 %
 Male percentage = 21.21 %
 Diverse gender percentage = 0 %","breathing, ""awareness to any sensations in their body or in their immediate environment"", focus on ""thoughts and feelings"",  ""non-judgmental observation""
 
-","waitlist control","Breathing Exercise (no further Info); Other: ""awareness to any sensations in their body or in their immediate environment"", focus on ""thoughts and feelings"",  ""non-judgmental observation""
-
-","Mindfulness (trait) (CAMS-R):  N 
+","Intervention's duration [days]: NA
+Single Session's duration [minutes]: 10
+Frequency [sessions per week]: 4.19
+Delivery mode: Asynchronous guiding
+Meditation Technique: Breathing Exercise (no further Info); Other: ""awareness to any sensations in their body or in their immediate environment"", focus on ""thoughts and feelings"",  ""non-judgmental observation""
+Meditation category: Attentional Family","waitlist control","Mindfulness (trait) (CAMS-R):  N 
 
 Depression (trait) (DASS):  N 
 
@@ -647,7 +737,7 @@ Well-being or quality of life (SWLS):  N
   "
 "Dorais 2021","N = 150
 
-Mean age = 27.1 Years
+Mean age [years] = 27.1
 
 Female percentage = 84 %
 Male percentage = 12.67 %
@@ -681,16 +771,19 @@ your sacred word or symbol.
 4. At the end of your meditation, just sit and rest in silence or say
 a prayer for a few moments.""
 
-","waitlist control","Mantra Meditation
-
-","Stress (PSS):  N 
+","Intervention's duration [days]: 28
+Single Session's duration [minutes]: NA
+Frequency [sessions per week]: 9
+Delivery mode: Asynchronous guiding
+Meditation Technique: Mantra Meditation
+Meditation category: Attentional Family","waitlist control","Stress (PSS):  N 
 
 Mindfulness (trait) (CAMS-R):  N 
 
      "
 "Toole 2016","N = 80
 
-Mean age = 18.79 Years
+Mean age [years] = 18.79
 
 Female percentage = 100 %
 Male percentage = 0 %
@@ -701,16 +794,19 @@ affectionate breathing exercise (sent to participants on Days 4 and
 5), and a loving-kindness meditation directed toward the body
 (sent to participants on Days 6 and 7)""
 
-","waitlist control","Body Scan; Breathing Exercise (no further Info); Loving-Kindness Meditation
-
-","Self-compassion (SCS):  N 
+","Intervention's duration [days]: 7
+Single Session's duration [minutes]: 20
+Frequency [sessions per week]: 2.5
+Delivery mode: Asynchronous guiding
+Meditation Technique: Body Scan; Breathing Exercise (no further Info); Loving-Kindness Meditation
+Meditation category: hybrid form","waitlist control","Self-compassion (SCS):  N 
 
 Self-esteem (RSES):  N 
 
      "
 "Schulte-Frankenfeld 2021","N = 64
 
-Mean age = 24.75 Years
+Mean age [years] = 24.75
 
 Female percentage = 64.06 %
 Male percentage = 35.94 %
@@ -718,9 +814,12 @@ Diverse gender percentage = 0 %","""The training course particularly assembled f
 ciples of mindfulness, stress and coping, happiness in live, meta-cognition, self-care and com-
 passion""
 
-","waitlist control","Breathing Exercise (no further Info); Other: focusing on meta-awareness, ""Mindfulness-based exercises [...] about happiness in life as the result of a benevolent attitude towards life and a positive relationship to oneself and others"", ""Methods of introspection, reflection and self-care""
-
-","Stress (PSS):  N 
+","Intervention's duration [days]: 57
+Single Session's duration [minutes]: 11.19
+Frequency [sessions per week]: 2.82
+Delivery mode: Asynchronous guiding
+Meditation Technique: Breathing Exercise (no further Info); Other: focusing on meta-awareness, ""Mindfulness-based exercises [...] about happiness in life as the result of a benevolent attitude towards life and a positive relationship to oneself and others"", ""Methods of introspection, reflection and self-care""
+Meditation category: hybrid form","waitlist control","Stress (PSS):  N 
 
 Well-being or quality of life (LSS):  N 
 
