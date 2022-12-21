@@ -1,4 +1,4 @@
-"","Participants","Intervention Description(s)","Intervention Characteristics","Control","Included Outcomes (Scale) & Evidence of Effectiveness in Between Subject Statistics"
+"","Participants","Intervention Description(s)","Intervention Characteristics","Control","Included Outcomes (Scale) & Evidence of Effectiveness in Between Subject Statistics","Authors' Key Conlclusion"
 "Ratanasiripong 2015","N = 60
 
 Mean age [years] = 19.27
@@ -18,7 +18,9 @@ Meditation category: Deconstructive Family","non-treatment control","Stress (PSS
 
 Anxiety (state) (STAI):  N 
 
-     "
+     ","""Findings indicated
+that biofeedback significantly reduced anxiety and main-
+tained stress levels in nursing students."""
 "Sloan 2016","N = 41
 
 Mean age [years] = 22
@@ -34,7 +36,9 @@ Delivery mode: Asynchronous guiding
 Meditation Technique: Breathing Exercise (no further Info)
 Meditation category: Attentional Family","non-treatment control","Stress (PSS):  Y 
 
-      "
+      ","""he breathing meditation technique
+demonstrated itself to be an effective strategy for undergraduate students to manage their
+self-perceived stress."""
 "Nidich 2009","N = 207
 
 Mean age [years] = 25.5
@@ -70,7 +74,9 @@ Anxiety (trait) (POMS):  Y
 
 Depression (trait) (POMS):  Y 
 
-    "
+    ",""" Tm program, decreased bP in association with
+decreased psychological distress, and increased coping in young
+adults at risk for hypertension."""
 "Barry 2019","N = 82
 
 Mean age [years] = 38.14
@@ -104,7 +110,16 @@ Hope (PCQ):  Y
 
 Optimism or positive attributional style (PCQ):  N 
 
-"
+","- self-administered mindfulness practice is effective
+    + on psychological health and
+    + psychological capital
+- mindfulness meditation more as complimentary than as alternative strategy
+
+""These results highlight the effectiveness of
+self-administered mindfulness practice on the psychological health of doctoral candidates,
+and the positive effect on psychological capital is reported as a key finding""
+""mindfulness meditation
+should be a complimentary strategy [...] not an alternative to managing challenges"""
 "Chen 2013","N = 60
 
 Mean age [years] = 19.5
@@ -136,7 +151,9 @@ Meditation category: Attentional Family",NA,"Anxiety (trait) (SAS):  N
 
 Depression (trait) (SDS):  N 
 
-     "
+     ","- mindfulness meditation reduces anxiety syptoms
+- ""Brief mindfulness meditation was beneficial for Chinese nursing students in reducing anxiety
+symptoms and lowering systolic blood pressure. Individuals with moderate anxiety are most likely to benefit from a short-term mindfulness meditation program"""
 "Warnecke 2011","N = 56
 
 Mean age [years] = 23.92
@@ -156,7 +173,12 @@ Depression (trait) (DASS):  N
 
 Anxiety (trait) (DASS):  Y 
 
-    "
+    ","""Mindfulness practice reduced
+stress and anxiety in senior medical students.""
+""The effect was maintained at
+follow-up in that the mean level of each outcome at
+week 16 did not significantly differ from the mean
+level of outcome at week 8."""
 "Gupta 2020","N = 94
 
 Mean age [years] = 23.92
@@ -176,7 +198,8 @@ Meditation category: Attentional Family","non-treatment control","Mindfulness (t
 
 Well-being or quality of life (SWLS):  Y 
 
-     "
+     ","""The experiment revealed that mindfulness, mindful consumption and life satisfaction change
+significantly in the treatment group after treatment as compared to the control group."""
 "Johnson-Waddell 2018","N = 60
 
 Mean age [years] = 23.92
@@ -193,7 +216,8 @@ Delivery mode: Asynchronous guiding
 Meditation Technique: Only ""Mindfulness Meditation"" named
 Meditation category: Attentional Family","non-treatment control","Mindfulness (trait) (MAAS):  N 
 
-      "
+      ","""Results of the dataanalysis revealed no statistically significant differences for either mindfulness or
+transformational leadership."""
 "Plummer 2018","N = 94
 
 Mean age [years] = 23
@@ -248,7 +272,10 @@ Well-being or quality of life (WHO-QOL-BREF):  N
 
 Acceptance (CAMS-R):  N 
 
-   "
+   ","""There were no statistically significant
+effects on participants’ stress levels or quality of life, yet there was a statistically significant increase in overall
+mindfulness (
+P < .05). """
 "Janowiak 1994","N = 62
 
 Mean age [years] = 23
@@ -280,7 +307,10 @@ Intervention 1:  N
 
 Intervention 2:  N 
 
-      "
+      ","""Both groups showed significant increases
+in scores on self-actualization; however, no Uferences were found between groups.
+Meditation training was associated with larger gains in scores on measures of system-
+atic relaxed behavior than of the relaxation training."""
 "Oman 2007","N = 31
 
 Mean age [years] = 23
@@ -301,7 +331,14 @@ Delivery mode: Synchronous guiding
 Meditation Technique: Mantra Meditation; Only ""Focused Attention Meditation"" named; Other: Readings reflecting meditative perspective
 Meditation category: Attentional Family","waitlist control","Religiosity or spirituality or religious coping (Positve coping subscale (adapted from scales of the Fetzer Institute)):  N 
 
-      "
+      ","""There were no significant changes in positive religious coping. ""
+""Compared to a control group, both interventions
+decreased negative religious coping (d = − 0.80, p < .01) and images of God as mainly
+controlling (d = − .73, p < .01). One intervention provided more training in tools for learn-
+ing from community and tradition-based spiritual exemplars. It produced gains in famous
+or traditional spiritual exemplars’ perceived influence (d = + .81, p < .05) and availabil-
+ity (d = + .66, p < .10), in self-efficacy for learning from spiritual exemplars (d = + .92,
+p < .05), and in nonmaterialistic aspirations (d = + 0.65, p < .05)."""
 "Weytens 2014","N = 77
 
 Mean age [years] = 22.29
@@ -331,7 +368,12 @@ Depression (trait) (BDI):  N
 
 Stress (PSS):  N 
 
-   "
+   ","- LKM: ""effective technique to increase the well-being"" [effects p = < 0.1 was rated as significant, if 0.05 was the significance leven there would have been no significance --> no effects of LKM in our terms]
+
+""subjects in the PER [Positive Emotion Regulation] group showed a significant increase in subjective well-being and life satisfaction and a significant
+decrease in depression and physical symptoms when compared to controls""
+""Overall, our results and previous literature suggest that LKM
+can be an effective technique to increase the well-being """
 "Bonamo 2015","N = 135
 
 Mean age [years] = 19.46
@@ -381,7 +423,20 @@ Intervention 1:  N
 
 Intervention 2:  N 
 
-     "
+     ","- mindfulness: compared to the control group, self-reported mean levels of state mindfulness
+were significantly higher after the meditation exercise for the
+20-min group, with no difference between the control and 45-
+min group
+- state anxiety: No group differences
+
+""However, a follow-up analysis of covariance (ANCOVA)
+controlling for symptoms of depression and anxiety, attention
+problems, and trait mindfulness showed that compared to the
+control group, self-reported mean levels of state mindfulness
+were significantly higher after the meditation exercise for the
+20-min group, with no difference between the control and 45-
+min group. No group differences were found across the three
+groups on changes in self-report ratings of state anxiety."""
 "Smith 2021","N = 14
 
 Mean age [years] = 19.46
@@ -412,7 +467,8 @@ Anxiety (trait) (DASS):  N
 
 Stress (DASS):  N 
 
-    "
+    ","""There were no other significant changes in mental
+health for those randomized to app-delivered mindfulness. """
 "Wang 2021","N = 104
 
 Mean age [years] = 22.8
@@ -432,7 +488,11 @@ Delivery mode: Asynchronous guiding
 Meditation Technique: Breathing Exercise (no further Info); Open Monitoring Meditation
 Meditation category: Attentional Family","non-treatment control","Anxiety (state) (STAI):  N 
 
-      "
+      ","""Relative to the
+CON group, the MT or VGT groups showed a significantly reduced AB. Interestingly, regarding effects on AB performance, MT
+was more effective in women, whereas VGT was more effective in men. MT, but not VGT, decreased anxiety scores from before
+to after the intervention. The current results indicate that gender plays an important role in the benefits of attention training, and
+thus that clinicians should take gender into consideration when implementing meditation-based therapies."""
 "Fish 2019","N = 72
 
 Mean age [years] = 21
@@ -451,7 +511,11 @@ Delivery mode: Asynchronous guiding
 Meditation Technique: Only ""Mindfulness Meditation"" named
 Meditation category: Attentional Family","non-treatment control","Depression (trait) (PHQ-9):  N 
 
-      "
+      ","-""Repeated-measures ANOVA demonstrated a significant interaction of group by time for depression scores, supporting the hypothesis that experimental group participants would significantly decrease their depression symptom severity compared to control group participants post-intervention 
+- ""Prescribed use of a gamified mindfulness meditation application 
+significantly decreased depression symptom severity as measured by the PHQ-
+9.""
+"
 "Siembor 2018","N = 21
 
 Mean age [years] = 20.89
@@ -476,7 +540,11 @@ Stress (PSS):  N
 
 Coping flexibility (Brief COPE):  N 
 
-    "
+    ","""there was a significant difference in physiological
+stress scores [F(1,18)=5.597, p=.029] between the two groups, with a large effect size (partial eta
+squared was .237). ""
+""Although not statistically
+significant, the intervention group exhibited a higher overall increase in mindfulness than the control group"""
 "Lee 2018","N = 163
 
 Mean age [years] = 20.89
@@ -501,7 +569,14 @@ Depression (trait) (QIDS-SR):  N
 
 Well-being or quality of life (RAND 36-Item Health Survey):  N 
 
-  "
+  ","""The app did not significantly improve stress, state anxiety, physical and social functioning, and
+role limitations because of physical or emotional health problems or pain (P>.05).""
+""The results support hypotheses that short-term use
+of DeStressify can reduce trait anxiety and improve general
+health, energy, emotional well-being, and work or school
+productivity in university students but do not support the other
+hypotheses.""
+""Mindfulness-based apps may provide an effective alternative support for university students’ mental health."""
 "Bultas 2021","N = 34
 
 Mean age [years] = 20.89
@@ -524,7 +599,10 @@ Resilience Scale (CD-RISC-10):  N
 
 Mindfulness (trait) (MAAS):  N 
 
-    "
+    ","""Outcomes revealed decreased feelings of help -
+lessness and anxiety in the intervention group. Although
+students had positive views of mindfulness, barriers were
+indicated."""
 "Huberty 2019","N = 88
 
 Mean age [years] = 20.89
@@ -549,7 +627,12 @@ Mindfulness (trait) (FFMQ):  Y
 
 Self-compassion (SCS-SF):  Y 
 
-    "
+    ","""There were significant differences in all outcomes (stress, mindfulness, and
+self-compassion) between the intervention and control groups after adjustment for covariates postintervention (all P<.04). These
+effects persisted at follow-up (all P<.03), except for the nonreacting subscale of mindfulness (P=.08).""
+""Effect sizes ranged from moderate (0.59) to large (1.24) across all outcomes.""
+""The majority of students in the intervention group reported that Calm was helpful to reduce stress and stated they would use Calm
+in the future."" "
 "Tanner 2009","N = 195
 
 Mean age [years] = 26.35
@@ -571,7 +654,16 @@ Delivery mode: Synchronous guiding
 Meditation Technique: Transcendental Meditation (TM)
 Meditation category: Attentional Family","waitlist control","Mindfulness (trait) (KIMS):  N 
 
-      "
+      ","-""First, it appears that the interrelations among mindfulness
+components differ for meditators and nonmeditators, but this may be a function of
+interest in meditation rather than a result of the practice itself. Second, the TM
+program can lead to increased mindfulness.""
+
+""significant time x treatment interaction, with the TM
+participants reporting greater increases in mindfulness than the
+waitlist participants. All KIMS subscales were positively intercorre-
+lated at pretreatment, and there were no differences over time or as
+a function of treatment condition in subscale intercorrelations."""
 "deGrace 1976","N = 23
 
 Mean age [years] = 20
@@ -628,7 +720,7 @@ Meditation category: Attentional Family","waitlist control","Self-acceptance (CP
 
 Well-being or quality of life (CPI):  N 
 
-     "
+     ","-""While both groups were equivalent at pretest time, significant differences on the Do and Cs scales of the CPI were found  at the  posttest"""
 "Messer 2016","N = 72
 
 Mean age [years] = 20
@@ -653,7 +745,8 @@ Meditation category: Attentional Family","non-treatment control","Stress (PSS): 
 
 Mindfulness (trait) (FFMQ):  N 
 
-     "
+     ","""Both mindfulness
+and relaxation reduced stress, but only mindfulness training increased mindfulness and reduced emotion-focused coping."""
 "Vasiliauskas 2013","N = 363
 
 Mean age [years] = 21
@@ -710,7 +803,10 @@ Intervention 1:  N
 
 Intervention 2:  N 
 
-      "
+      ",""" Those in the prayer and
+devotional attention groups showed significant changes in state forgiveness. Also, participants in the
+prayer intervention group showed significant changes in empathy toward their offender. Implications
+are considered."""
 "Nolan 2020","N = 66
 
 Mean age [years] = 21
@@ -734,7 +830,11 @@ Stress (DASS, PSS):  N
 
 Well-being or quality of life (SWLS):  N 
 
-  "
+  ","""significant decrease in perceived stress for the intervention group as
+compared to the no treatment control; however, no statistically significant differences
+were found on measures of psychological distress, mindfulness, and life satisfaction.
+Findings suggest the use of an MBMA [headspace] may be viable as an acceptable and feasible
+method of introducing stress management strategies to premedical and nursing students"""
 "Dorais 2021","N = 150
 
 Mean age [years] = 27.1
@@ -780,7 +880,11 @@ Meditation category: Attentional Family","waitlist control","Stress (PSS):  N
 
 Mindfulness (trait) (CAMS-R):  N 
 
-     "
+     ","- ""The study findings indicate that individuals who participat
+e in a 4-week
+online centering intervention showed improved levels of st
+ress and trait mindfulness
+over time"""
 "Toole 2016","N = 80
 
 Mean age [years] = 18.79
@@ -803,7 +907,8 @@ Meditation category: hybrid form","waitlist control","Self-compassion (SCS):  N
 
 Self-esteem (RSES):  N 
 
-     "
+     ","""Results suggest that brief exposure to the basic tenets of self-compassion holds promise
+for improving aspects of self-compassion and [body image distress] BID"""
 "Schulte-Frankenfeld 2021","N = 64
 
 Mean age [years] = 24.75
@@ -825,4 +930,12 @@ Well-being or quality of life (LSS):  N
 
 Mindfulness (trait) (FMI-14):  N 
 
-    "
+    ","""The
+online mindfulness programme was found to signifi-
+cantly decrease perceived stress (ηp2 = .180, a large
+effect). It also increased self-regulation (ηp2 = .195, a
+large effect), mindfulness (ηp2 = .174; a large effect)
+and cognitive reappraisal (ηp2 = .136, a medium effect).
+Increments in life satisfaction were not significant.
+Changes in self-regulation were mediated by increased
+mindfulness."""
