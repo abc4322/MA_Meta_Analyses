@@ -1,5 +1,5 @@
 ---
-title: An R Markdown document converted from "Meta.Analysis.ipynb"
+title: An R Markdown document converted from "C:/Users/anonymous/Documents/GitHub/MA_Meta_Analyses/Meta.Analysis.ipynb"
 output: html_document
 ---
 
@@ -6510,23 +6510,37 @@ part.p.group.p.outcome.df
 
 # Sensitivity Analysis
 
+```{r}
+# install.packages("gt")  # <-- maniplating table apperance
+# install.packages("webshot2")  # <-- for installing PhantomJS
+# install phantomjs <-- for saving tables as pictures
+# webshot::install_phantomjs(version = "2.1.1",
+#                            baseURL = "https://github.com/wch/webshot/releases/download/v0.3.1/",
+#                            force = FALSE)
+# install.packages("rmarkdown")  # <-- for saving table as docx
+library(webshot2)
+library(gt)
+library(rmarkdown)
+```
+
 ## Functions
 
 ```{r}
+# with own rows for CIs
 get.sens.anal.vec <- function(res){
   if ("rma.uni" %in%  class(res)){  # for {metafor} results
     n.cont <- sum(res$data[, "n.control"])
     n.int <- sum(res$data[, "n.int"])
     n.total <- n.cont + n.int
-    pval <- round(res$pval, 4)
-    pval <- ifelse(pval == 0, "< .0001" ,pval)
-    pval.Q <- round(res$QEp, 4)
-    pval.Q <- ifelse(pval.Q == 0, "< .0001" ,pval.Q)
+    pval <- res$pval
+    # pval <- ifelse(pval == 0, "< .0001" ,pval)
+    pval.Q <- res$QEp
+    # pval.Q <- ifelse(pval.Q == 0, "< .0001" ,pval.Q)
     
     sens.anal <- c(
-      res$k, n.total, n.cont, n.int, paste(round(res$b[1,1], 2), " (", round(res$ci.lb, 2), ", ", round(res$ci.ub, 2), ")", sep = ""),
-      round(res$se, 2), round(res$zval, 2), pval, paste(round(res$tau2, 4), "(- , -)"), round(res$se.tau2, 4),
-      paste(round(res$I2, 2), "(-, -)"), "-", round(res$QE, 2), pval.Q
+      res$k, n.total, n.cont, n.int, res$b[1,1], res$ci.lb, res$ci.ub,
+      res$se, res$zval, pval, res$tau2, NA, NA, res$se.tau2,
+      res$I2, NA, NA, res$QE, pval.Q
     )
     
   } else if ("metacont" %in%  class(res)){  # for {meta} resutls
@@ -6534,24 +6548,24 @@ get.sens.anal.vec <- function(res){
     n.cont <- sum(res$n.e)
     n.int <- sum(res$n.c)
     n.total <- n.cont + n.int
-    pval <- round(res$pval.random, 4)
-    pval <- ifelse(pval == 0, "< .0001" ,pval)
-    pval.Q <- round(res$pval.Q, 4)
-    pval.Q <- ifelse(pval.Q == 0, "< .0001" ,pval.Q)
+    pval <- res$pval.random
+    # pval <- ifelse(pval == 0, "< .0001" ,pval)
+    pval.Q <- res$pval.Q
+    # pval.Q <- ifelse(pval.Q == 0, "< .0001" ,pval.Q)
     sens.anal <- list(
       random = c(
-        res$k, n.total, n.cont, n.int, paste(round(res$TE.random, 2), " (", round(res$lower.random, 2), ", ", round(res$upper.random, 2), ")", sep = ""),
-        round(res$seTE.random, 2), round(res$zval.random, 2), pval,
-        paste(round(res$tau2, 4), " (", round(res$lower.tau2, 4), ", ", round(res$upper.tau2, 4), ")", sep = ""), "-",
-        paste(round(res$I2, 2), " (", round(res$lower.I2, 2), ", ", round(res$upper.I2, 2), ")", sep = ""), "-",
-        round(res$Q, 2), pval.Q
+        res$k, n.total, n.cont, n.int, res$TE.random, res$lower.random, res$upper.random,
+        res$seTE.random, res$zval.random, pval,
+        res$tau2, res$lower.tau2, res$upper.tau2, NA,
+        res$I2 * 100, res$lower.I2 * 100, res$upper.I2 * 100,
+        res$Q, pval.Q
       ),
       common = c(
-        res$k, n.total, n.cont, n.int, paste(round(res$TE.common, 2), " (", round(res$lower.common, 2), ", ", round(res$upper.common, 2), ")", sep = ""),
-        round(res$seTE.common, 2), round(res$zval.common, 2), pval,
-        paste(round(res$tau2, 4), " (", round(res$lower.tau2, 4), ", ", round(res$upper.tau2, 4), ")", sep = ""), "-",
-        paste(round(res$I2, 2), " (", round(res$lower.I2, 2), ", ", round(res$upper.I2, 2), ")", sep = ""), "-",
-        round(res$Q, 2), pval.Q
+        res$k, n.total, n.cont, n.int, res$TE.common, res$lower.common, res$upper.common,
+        res$seTE.common, res$zval.common, pval,
+        res$tau2, res$lower.tau2, res$upper.tau2, NA,
+        res$I2 * 100, res$lower.I2 * 100, res$upper.I2 * 100,
+        res$Q, pval.Q
       )
     )
   } else {
@@ -6562,10 +6576,11 @@ get.sens.anal.vec <- function(res){
 ```
 
 ```{r}
-get.sens.anal.df <- function(outcome, model, preferred.scale = F){
+get.sens.anal.df <- function(outcome, model, preferred.scale = F, save.as = F, path = ""){
   if (model == "rand.fix"){
     outliers <- outlier.list[[outcome]]
     
+    # get results    
     restuls.meta.o. <- print.meta.results(
       outcome = outcome, preferred.scale = preferred.scale,
       regression = F, print.forest = F, print.funnel = F, print.influence = F, print.baujat = F, split.subgroups = F, print.forest.sub.single = F, print.meta.results = F,
@@ -6605,12 +6620,9 @@ get.sens.anal.df <- function(outcome, model, preferred.scale = F){
         return.data = "results.metafor", results.metafor.fixed = T,
         filter.forest..funnel.vec = if(length(outliers) == 0){FALSE}else{-outliers}
       )
-
-      sens.anal.df <- data.frame(
-        c(
-          "number of\nincluded studies", "number of\nobeservations", "... in experimental group", "... in control group", "SMD (CI) [Hedge's g]",
-          "SMD's standard errror", "SMD's z-value", "p-value\n(testing SMD differs from zero)", "tau^2 (CI)", "tau^2's standard error", "I^2 (CI)", "I^2's standard error", "Q-value", "p-value\n(testing between-study heterogeneity)"
-        ),
+      
+      # create sensitivity analysis data frame
+      sens.anal.df <- as.data.frame(t(data.frame(
         get.sens.anal.vec(restuls.meta.o.)[["random"]],
         get.sens.anal.vec(restuls.meta.n.o.)[["common"]],
         get.sens.anal.vec(restuls.meta.o.)[["random"]],
@@ -6619,19 +6631,67 @@ get.sens.anal.df <- function(outcome, model, preferred.scale = F){
         get.sens.anal.vec(restuls.metafor.rand.n.o.),
         get.sens.anal.vec(restuls.metafor.fix.o.),
         get.sens.anal.vec(restuls.metafor.fix.n.o.)
-      )
-
+      )))
+      
+      rownames(sens.anal.df) <- NULL
+      
       colnames(sens.anal.df) <- c(
-        "Metrics",
-        "With outliers and influential cases included (meta; random-effets)",
-        "With outliers and influential cases excluded (meta; random-effets)",
-        "With outliers and influential cases included (meta; fixed-effets)",
-        "With outliers and influential cases excluded (meta; fixed-effets)",
-        "With outliers and influential cases included (metafor; random-effets)",
-        "With outliers and influential cases excluded (metafor; random-effets)",
-        "With outliers and influential cases included (metafor; fixed-effets)",
-        "With outliers and influential cases excluded (metafor; fixed-effets)"
+        "Number of included studies", "Number of obeservations", "... in experimental group", "... in control group", "SMD [Hedge's g]", "SMD CI lower threshold", "SMD CI upper threshold",
+        "SMD's standard errror", "SMD's z-value", "p-value (testing SMD differs from zero)", "tau^2", "tau^2 CI lower threshold", "tau^2 CI upper threshold", "tau^2's standard error", "I^2 [%]",
+        "I^2 CI lower threshold", "I^2 CI upper threshold", "Q-value", "p-value (testing between-study heterogeneity)"
       )
+      
+      ## add rownames column
+      choices.vec <- c(
+        "Outliers and influential cases included (meta; random-effets)",
+        "Outliers and influential cases excluded (meta; random-effets)",
+        "Outliers and influential cases included (meta; fixed-effets)",
+        "Outliers and influential cases excluded (meta; fixed-effets)",
+        "Outliers and influential cases included (metafor; random-effets)",
+        "Outliers and influential cases excluded (metafor; random-effets)",
+        "Outliers and influential cases included (metafor; fixed-effets)",
+        "Outliers and influential cases excluded (metafor; fixed-effets)"
+      )
+      
+      sens.anal.df <- sens.anal.df %>% mutate(Choices = choices.vec) %>% relocate(Choices)
+      
+      ## round values
+      sens.anal.df[, 2:5] <- round(sens.anal.df[, 2:5], 0)
+      sens.anal.df[, 6:10] <- round(sens.anal.df[, 6:10], 2)
+      sens.anal.df[, 11:15] <- round(sens.anal.df[, 11:15], 4)
+      sens.anal.df[, 16:19] <- round(sens.anal.df[, 16:19], 2)
+      sens.anal.df[, 20] <- round(sens.anal.df[, 20], 4)
+      
+      print(sens.anal.df)
+      
+      # save table
+      ## cut out not wanted columns for coloring
+      colrange <- 6:ncol(sens.anal.df)
+      
+      for (col in colrange){
+        if (all_na(sens.anal.df[, col])){
+          colrange <- colrange[!colrange == col]
+        }
+      }
+      
+      if (save.as != F){
+        sens.anal.df |>
+          gt(rowname_col = "Choices") |>
+          data_color(
+            columns = colrange,
+            palette = "RdYlGn",
+            na_color = "gray85",
+            alpha = .8
+          ) |>
+          gtsave(
+            paste(
+              path, "Sens.anal.table.", outcome, ".",
+              ifelse(preferred.scale == F, "", paste(preferred.scale, ".", sep = "")),
+              save.as, sep = ""
+            )
+          )
+      }
+      
     } else {
       sens.anal.df <- NA
     }
@@ -6646,16 +6706,18 @@ get.sens.anal.df <- function(outcome, model, preferred.scale = F){
 ## Get Sensitivity Data Frames
 
 ```{r}
+path <- "C:/Users/anonymous/Documents/GitHub/MA_Meta_Analyses/Sensitivity Analysis tables/"
 for (outcome in present.outcomes.sorted){
   if (outcome == "Stress"){
     for (preferred.scale in c("DASS", "PSS")){
-      print(preferred.scale)
-      sens.anal.df <- get.sens.anal.df(outcome, "rand.fix", preferred.scale)
-      print(sens.anal.df)
+      for (file in c("png", "html", "docx")){
+        get.sens.anal.df(outcome, "rand.fix", preferred.scale, file, path)
+      }
     }
   } else {
-    sens.anal.df <- get.sens.anal.df(outcome, "rand.fix", F)
-    print(sens.anal.df)
+    for (file in c("png", "html", "docx")){
+      get.sens.anal.df(outcome, "rand.fix", preferred.scale = F, file, path)
+    }
   }
 }
 ```
@@ -9667,38 +9729,56 @@ plot.summary.forest(with.outliers = T)
 
 # Old Code
 
-## Test
+## Sensititvity Analyis
 
 ```{r}
-# install.packages("gt")  # <-- maniplating table apperance
-# install.packages("webshot2")  # <-- for installing PhantomJS
-# install phantomjs <-- for saving tables as pictures
-# webshot::install_phantomjs(version = "2.1.1",
-#                            baseURL = "https://github.com/wch/webshot/releases/download/v0.3.1/",
-#                            force = FALSE)
-# install.packages("rmarkdown")  # <-- for saving table as docx
-library(webshot2)
-library(gt)
-library(rmarkdown)
-library(magrittr)  # <-- for setting rownames with dplyr
+get.sens.anal.vec <- function(res){
+  if ("rma.uni" %in%  class(res)){  # for {metafor} results
+    n.cont <- sum(res$data[, "n.control"])
+    n.int <- sum(res$data[, "n.int"])
+    n.total <- n.cont + n.int
+    pval <- round(res$pval, 4)
+    # pval <- ifelse(pval == 0, "< .0001" ,pval)
+    pval.Q <- round(res$QEp, 4)
+    # pval.Q <- ifelse(pval.Q == 0, "< .0001" ,pval.Q)
+    
+    sens.anal <- c(
+      res$k, n.total, n.cont, n.int, paste(round(res$b[1,1], 2), " (", round(res$ci.lb, 2), ", ", round(res$ci.ub, 2), ")", sep = ""),
+      round(res$se, 2), round(res$zval, 2), pval, paste(round(res$tau2, 4), "(- , -)"), round(res$se.tau2, 4),
+      paste(round(res$I2, 2), "(-, -)"), NA, round(res$QE, 2), pval.Q
+    )
+    
+  } else if ("metacont" %in%  class(res)){  # for {meta} resutls
+    
+    n.cont <- sum(res$n.e)
+    n.int <- sum(res$n.c)
+    n.total <- n.cont + n.int
+    pval <- round(res$pval.random, 4)
+    # pval <- ifelse(pval == 0, "< .0001" ,pval)
+    pval.Q <- round(res$pval.Q, 4)
+    # pval.Q <- ifelse(pval.Q == 0, "< .0001" ,pval.Q)
+    sens.anal <- list(
+      random = c(
+        res$k, n.total, n.cont, n.int, paste(round(res$TE.random, 2), " (", round(res$lower.random, 2), ", ", round(res$upper.random, 2), ")", sep = ""),
+        round(res$seTE.random, 2), round(res$zval.random, 2), pval,
+        paste(round(res$tau2, 4), " (", round(res$lower.tau2, 4), ", ", round(res$upper.tau2, 4), ")", sep = ""), NA,
+        paste(round(res$I2, 2), " (", round(res$lower.I2, 2), ", ", round(res$upper.I2, 2), ")", sep = ""), NA,
+        round(res$Q, 2), pval.Q
+      ),
+      common = c(
+        res$k, n.total, n.cont, n.int, paste(round(res$TE.common, 2), " (", round(res$lower.common, 2), ", ", round(res$upper.common, 2), ")", sep = ""),
+        round(res$seTE.common, 2), round(res$zval.common, 2), pval,
+        paste(round(res$tau2, 4), " (", round(res$lower.tau2, 4), ", ", round(res$upper.tau2, 4), ")", sep = ""), NA,
+        paste(round(res$I2, 2), " (", round(res$lower.I2, 2), ", ", round(res$upper.I2, 2), ")", sep = ""), NA,
+        round(res$Q, 2), pval.Q
+      )
+    )
+  } else {
+    cat("ERROR in get.sens.anal(): unknown input object of class:", class(res))
+  }
+  return(sens.anal)
+}
 ```
-
-```{r}
-test <- get.sens.anal.df("Stress", "rand.fix", "DASS")
-```
-
-```{r}
-test |>
-  gt() |>
-  data_color(
-    direction = "row",
-    palette = "viridis",
-    na_color = "white",
-    columns = -c("Metrics")
-  ) |>
-  gtsave("test1.png")
-```
-
 
 ## Compare meta and metafor forest plots
 
@@ -9726,7 +9806,28 @@ test.results.metafor
 ```
 
 ```{r}
+print.meta.results(
+  "Stress", preferred.scale = "DASS",
+  regression = F, print.forest = F, print.funnel = F, print.influence = F, print.baujat = F, split.subgroups = F, print.forest.sub.single = F, print.meta.results = F,
+  return.data = "results.metafor" # ,
+  # filter.forest..funnel.vec = - outlier.list[["Stress"]]
+)$I2
+```
+
+```{r}
 forest(test.results.metafor)
+```
+
+```{r}
+test |>
+  gt(rowname_col = "Choices") |>
+  data_color(
+    columns = 6:ncol(test),
+    palette = "RdYlGn",
+    na_color = "gray85",
+    alpha = .8
+  ) |>
+  gtsave("test1.html")
 ```
 
 ```{r}
@@ -9757,9 +9858,17 @@ forest(test.results.meta)
       )
 ```
 
+```{r}
+numeric(0.1)
+```
+
 ## Investigate relationship between power and pval in arificial meta-analyses
 
 ### Function generation artificial meta-analyis
+
+```{r}
+numeric(0)
+```
 
 ```{r}
 get.test.res <- function(){
