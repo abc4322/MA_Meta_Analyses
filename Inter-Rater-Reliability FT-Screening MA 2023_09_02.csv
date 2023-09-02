@@ -1,0 +1,3 @@
+Reviewer A,Reviewer B,"A Include, B Include","A Include, B Exclude","A Exclude, B Include","A Exclude, B Exclude",Proportionate Agreement,Yes Probability,No Probability,Random Agreement Probability,Cohen's Kappa
+Robin Jacob,Theresa Dicks,105,20,43,485,0.90352,0.04339,0.62532,0.6687,0.70879
+Pascal Kemmerer,Robin Jacob,19,8,6,120,0.9085,0.02884,0.68897,0.7178,0.67575

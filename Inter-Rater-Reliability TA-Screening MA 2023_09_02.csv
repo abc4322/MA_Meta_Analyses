@@ -1,0 +1,5 @@
+Reviewer A,Reviewer B,"A Yes, B Yes","A Yes, B No","A No, B Yes","A No, B No",Proportionate Agreement,Yes Probability,No Probability,Random Agreement Probability,Cohen's Kappa
+Robin Jacob,Theresa Dicks,379,209,76,3329,0.92863,0.01678,0.75557,0.77235,0.68647
+Jennifer Reichel,Theresa Dicks,26,22,23,350,0.89311,0.01327,0.78287,0.79614,0.47569
+Jennifer Reichel,Robin Jacob,39,25,23,400,0.90144,0.01673,0.758,0.77473,0.56246
+Pascal Kemmerer,Robin Jacob,93,46,44,802,0.90863,0.01963,0.73942,0.75905,0.62079
