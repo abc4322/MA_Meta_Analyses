@@ -17,8 +17,7 @@
 # %% [markdown] vscode={"languageId": "r"}
 # ToDos:
 # - Assign meditation techniques to categories (e.g., focused attention, open monitoring, loving-kindness, body scan, etc.)
-# - Assign Scales and (their directsions?) to outcomes
-# - Clean "Other" outcomes
+# - Assign Scales to outcomes
 # - Implement additional outcomes and interventions from theresa
 # - Define outliers
 # - Cluster interventions
@@ -3737,6 +3736,18 @@ for (outcome in 1:length(present.outcomes)){
 }
 outcome.direction.df
 
+# %% vscode={"languageId": "r"}
+# correct input mistakes
+outcome.direction.df <- outcome.direction.df |>
+  mutate(
+    High.or.low.means.resilient = replace(
+      High.or.low.means.resilient,
+      Outcome %in% c("Depression", "Stress"),
+      "v"
+    )
+  )
+outcome.direction.df
+
 # %% hidden=true vscode={"languageId": "r"}
 # correct left scale directions
 outcome.direction.df <- outcome.direction.df |>
@@ -5502,7 +5513,7 @@ meta.analyze <- function(
     results.meta <- metacont(
       n.e = n.int, mean.e = mean.int, sd.e = sd.int,
       n.c = n.control, mean.c = mean.control, sd.c = sd.control,
-      fixed = forest.add.fix.eff.mod, random = T, studlab = study.id,
+      common = forest.add.fix.eff.mod, random = T, studlab = study.id,
       data = meta.df.list[[1]], sm = "SMD"
     )
     
@@ -5514,7 +5525,7 @@ meta.analyze <- function(
       results.meta.cohens.d <- metacont(
       n.e = n.int, mean.e = mean.int, sd.e = sd.int,
       n.c = n.control, mean.c = mean.control, sd.c = sd.control,
-        fixed = T, random = T, studlab = study.id,
+        common = T, random = T, studlab = study.id,
         data = meta.df.list[[1]], sm = "SMD", method.smd = "Cohen"
       )
 
@@ -5547,10 +5558,6 @@ meta.analyze <- function(
 
     # set right and left label for scale of SMD
     if (
-      !(outcome.direction.df[
-        which(outcome.direction.df[,"Outcome"] == outcome),
-        "High.or.low.means.resilient"
-      ] == "v") %>% is.na() &&
       outcome.direction.df[
         which(outcome.direction.df[,"Outcome"] == outcome),
         "High.or.low.means.resilient"
@@ -5999,7 +6006,7 @@ meta.analyze <- function(
         results.meta <- metacont(
           n.e = n.int, mean.e = mean.int, sd.e = sd.int,
           n.c = n.control, mean.c = mean.control, sd.c = sd.control,
-          fixed = T, random = T, studlab = study.id,
+          common = T, random = T, studlab = study.id,
           data = meta.df.list[[1]], sm = "SMD"
         )
 
@@ -7387,13 +7394,6 @@ names(comparions.all) <- c(
 )
 names(comparions.all)
 
-# %% vscode={"languageId": "r"}
-net.meta.analyze(
-  "Depression", preferred.scale = get.1st.preferred.scale("Depression"), net.df = F, net.res = F,
-  plot.netgraph = F, plot.forest = F, plot.direct.evidence = F, plot.netheat = F,
-  return.data = "net.res", reference.group = "passive control", random = T, silent = T
-)
-
 # %% code_folding=[] hidden=true vscode={"languageId": "r"}
 net.meta.analyze <- function(
   # parameters for data collection
@@ -7505,7 +7505,7 @@ net.meta.analyze <- function(
         studlab = studlab,
         data = net.df,
         sm = "SMD",
-        fixed = !random,
+        common = !random,
         random = random,
         reference.group = ifelse(
           reference.group %in% net.df$treat1 | reference.group %in% net.df$treat2,
