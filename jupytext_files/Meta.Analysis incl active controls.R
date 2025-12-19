@@ -14,12 +14,23 @@
 #     name: ir
 # ---
 
+# %% [markdown] vscode={"languageId": "r"}
+# ToDos:
+# - Assign meditation techniques to categories (e.g., focused attention, open monitoring, loving-kindness, body scan, etc.)
+# - Assign Scales and (their directsions?) to outcomes
+# - Clean "Other" outcomes
+# - Implement additional outcomes and interventions from theresa
+# - Define outliers
+# - Cluster interventions
+# - look for additional manual tasks
+#
+
 # %% [markdown]
 # # Preprocess Data
 #
 
 # %% vscode={"languageId": "r"}
-raw.df <- read.csv("2023_12_10_Data Extraction All Data Final Export4.csv")
+raw.df <- read.csv("2025_12_19_Data Extraction.csv")
 
 
 
@@ -61,6 +72,10 @@ for (study in unique(my.df$Covidence..)){
   studies.per.lab.df <- my.df |> filter(Covidence.. == study)
   if ("Consensus" %in% studies.per.lab.df$Reviewer.Name){
     my.df <- my.df |> filter(!(Covidence.. == study & Reviewer.Name != "Consensus"))
+  } else if (all(!c("Consensus", "Robin") %in% studies.per.lab.df$Reviewer.Name)) {
+    # Remove all but the first reviewer's data if no consensus or Robin Jacob data is present
+    first_reviewer <- studies.per.lab.df$Reviewer.Name[1]
+    my.df <- my.df |> filter(!(Covidence.. == study & Reviewer.Name != first_reviewer))
   } else {
     my.df <- my.df |> filter(!(Covidence.. == study & Reviewer.Name != "Robin Jacob"))
   }
@@ -76,13 +91,20 @@ unique(table(my.df$Study.ID))
 table(my.df$Study.ID)[table(my.df$Study.ID) == 2]
 
 # %% hidden=true vscode={"languageId": "r"}
-my.df |> filter(Study.ID == "Flett 2019")
+my.df |> filter(Study.ID %in% c("Flett 2019", "Pilcher 2025"))
 
 # %% hidden=true vscode={"languageId": "r"}
 # adjust labels
 my.df[my.df$Covidence.. == 3369, "Study.ID"] <- "Flett 2019b"
 my.df[my.df$Covidence.. == 3120, "Study.ID"] <- "Flett 2019a"
-my.df |> filter(Covidence.. %in% c(3369, 3120))
+my.df[my.df$Covidence.. == 10674, "Study.ID"] <- "Pilcher 2025b"
+my.df[my.df$Covidence.. == 10673, "Study.ID"] <- "Pilcher 2025a"
+my.df |> filter(Covidence.. %in% c(3369, 3120, 10674, 10673))
+
+# %% vscode={"languageId": "r"}
+# Check again if study labels are unique and what is the new number of unique study labels
+unique(table(my.df$Study.ID))
+my.df$Study.ID %>% n_distinct()
 
 # %% [markdown] heading_collapsed=true hidden=true
 # ### Remove single column names and repeating names with ascending numbers (table headlines)
@@ -163,8 +185,8 @@ remove.cols <- c(cols.pop.char[],
 my.df <- my.df[, ! names(my.df) %in% remove.cols]
 
 
-# %% hidden=true vscode={"languageId": "r"}
-my.df
+# %% vscode={"languageId": "r"}
+my.df %>% head()
 
 # %% [markdown] heading_collapsed=true hidden=true
 # ### Remove specific values
@@ -199,6 +221,23 @@ my.df[44, "Outcome.4.Scale.s.or.other.Measure.s.Name"] <-
   "Depression Anxiety and Stress Scale – 21 (DASS-21) subscale stress"
 my.df[4, "Outcome.3.Scale.s.or.other.Measure.s.Name"] <-
 "Depression Anxiety and Stress Scale (DASS), Perceived Stress Scale (PSS)"
+
+# %% vscode={"languageId": "r"}
+# Remove "Other:" outcomes
+my.df <- my.df %>%
+  mutate(
+    across(
+      starts_with("Name.of.Outcome."),
+      ~ case_when(
+        grepl("Other:", .x) ~ NA_character_,
+        TRUE ~ .x
+      )
+    ),
+    Duration.of.single.intervention.sessions.in.minutes.Intervention.1 = case_when(
+      Duration.of.single.intervention.sessions.in.minutes.Intervention.1 == "600 (five two hour sessions)" ~ "120",
+      TRUE ~ Duration.of.single.intervention.sessions.in.minutes.Intervention.1
+    )
+  )
 
 # %% [markdown] heading_collapsed=true
 # ## Create arrays, data frame lists, and data frames from Covidence tables
@@ -2344,7 +2383,8 @@ scale.PANAS.synonyms <- c(
 )
 
 scale.SPANE.synonyms <- c(
-  "12-item Scale of Positive and Negative Experiences (SPANE; Diener et al. 2010)"
+  "12-item Scale of Positive and Negative Experiences (SPANE; Diener et al. 2010)",
+  "Positive and Negative Experience (SPANE)"
 )
 
 scale.m.DES.synonyms <- c(
@@ -3464,7 +3504,7 @@ for (row in 1:nrow(outcome.names.df)){
   }
 }
 
-present.outcomes <- present.outcomes[-c(which(present.outcomes == "Other: "))]  # delete "Other: "
+# present.outcomes <- present.outcomes[-c(which(present.outcomes == "Other: "))]  # delete "Other: " already done above
 outcomes.no.df <- data.frame(table(present.outcomes))
 
 present.outcomes <- unique(present.outcomes)
@@ -3602,6 +3642,9 @@ for (outcome in 1:length(present.outcomes)){
     )
 }
 scale.direction.unclear.df.list
+
+# %% vscode={"languageId": "r"}
+scale.direction.per.outcome.df.list
 
 # %% hidden=true vscode={"languageId": "r"}
 # add missing scale direction (inclomplet for search update)
@@ -4883,6 +4926,8 @@ plot.influnece <- function(results.metafor, study.ids = "name", cluster = "id"){
 }
 
 # %% hidden=true vscode={"languageId": "r"}
+# install.packages("reshape2")
+library(reshape2)
 
 # %% hidden=true vscode={"languageId": "r"}
 # set plotsize to options(repr.plot.width = 30, repr.plot.height = 33, repr.plot.res = 200)
@@ -5368,6 +5413,7 @@ meta.analyze <- function(
       sessions.duration <- descr..reg.data.list[[time.point]][["sessions.duration"]]
       sessions.frequency <- descr..reg.data.list[[time.point]][["sessions.frequency"]]
       programs.duration <- descr..reg.data.list[[time.point]][["programs.duration"]]
+
       delivery.mode <- descr..reg.data.list[[time.point]][["delivery.mode"]]
 
       follow.up.period <- descr..reg.data.list[[time.point]][["follow.up.period"]]
@@ -5501,6 +5547,10 @@ meta.analyze <- function(
 
     # set right and left label for scale of SMD
     if (
+      !(outcome.direction.df[
+        which(outcome.direction.df[,"Outcome"] == outcome),
+        "High.or.low.means.resilient"
+      ] == "v") %>% is.na() &&
       outcome.direction.df[
         which(outcome.direction.df[,"Outcome"] == outcome),
         "High.or.low.means.resilient"
@@ -7337,6 +7387,13 @@ names(comparions.all) <- c(
 )
 names(comparions.all)
 
+# %% vscode={"languageId": "r"}
+net.meta.analyze(
+  "Depression", preferred.scale = get.1st.preferred.scale("Depression"), net.df = F, net.res = F,
+  plot.netgraph = F, plot.forest = F, plot.direct.evidence = F, plot.netheat = F,
+  return.data = "net.res", reference.group = "passive control", random = T, silent = T
+)
+
 # %% code_folding=[] hidden=true vscode={"languageId": "r"}
 net.meta.analyze <- function(
   # parameters for data collection
@@ -7789,6 +7846,9 @@ cat(int.info)
 # %% [markdown] heading_collapsed=true hidden=true
 # ## Intervention Characteristics
 
+# %% vscode={"languageId": "r"}
+intervention.comparisons.df.list[[1]]
+
 # %% hidden=true vscode={"languageId": "r"}
 int.char.info <- c(rep(c(1), study.no))
 
@@ -7823,7 +7883,7 @@ for (study in 1:study.no){
           "Frequency [sessions per week]: ", if(!freq %in% c(nm.placeholder, as.character(nm.placeholder))){freq}else{"NA"}, "\n",
           "Delivery mode: ", if(!del.mod %in% c(nm.placeholder, as.character(nm.placeholder))){del.mod}else{"NA"}, "\n",
           "Meditation Technique: ", med.tech, "\n",
-          "Meditation category: ", if(!med.typ %in% c(nm.placeholder, as.character(nm.placeholder))){med.typ}else{"NA"},
+          "Meditation category: ", if(is.null(med.typ) || !med.typ %in% c(nm.placeholder, as.character(nm.placeholder))){med.typ}else{"NA"},
           sep = ""
         )
       } else {""},
@@ -8940,11 +9000,9 @@ studies.suff.data.mix.num; unique(studies.suff.data.mix.vec)
 
 # %% vscode={"languageId": "r"}
 # install.packages("gt")  # <-- manipulating table apperance
-# install.packages("webshot2")  # <-- for installing PhantomJS
 # install phantomjs <-- for saving tables as pictures
-# webshot::install_phantomjs(version = "2.1.1",
-#                            baseURL = "https://github.com/wch/webshot/releases/download/v0.3.1/",
-#                            force = FALSE)
+# install.packages("webshot")
+# webshot::install_phantomjs()
 # install.packages("rmarkdown")  # <-- for saving table as docx
 library(webshot2)
 library(gt)
@@ -15092,7 +15150,7 @@ plot.summary.forest(with.outliers = T)
 # # Get messages to request authors for data
 
 # %% hidden=true vscode={"languageId": "r"}
-install.packages("openxlsx")
+# install.packages("openxlsx")
 library(openxlsx)
 
 # %% hidden=true vscode={"languageId": "r"}
