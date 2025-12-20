@@ -5627,7 +5627,7 @@ meta.analyze <- function(
           results.meta.sub <- metacont(
             n.e = n.int, mean.e = mean.int, sd.e = sd.int,
             n.c = n.control, mean.c = mean.control, sd.c = sd.control,
-            fixed = T, random = T, studlab = study.id,
+            common = T, random = T, studlab = study.id,
             data = meta.df.list[[1]], sm = "SMD"
           )
           if (subgroup.method == "fixed"){  # corresponds to Schwarzer et al. (2015). Meta-Analysis with R. doi: 10.1007/978-3-319-21416-0, pp. 41 - 45 & 89 - 91
@@ -8802,7 +8802,7 @@ for (outcome in outcomes.no.ordered.freq.df$Outcome){
   ### count
   for (study in uni.stud.p.outcome.act.only){
     if (!study %in% studies.suff.data.act.vec){
-      studies.suff.data.act.num <- studies.suff.data.act.num + 1
+      studies.suff.data.act.num <- <- studies.suff.data.act.num + 1
     }
   }
   
@@ -8994,6 +8994,10 @@ studies.suff.data.act.num; unique(studies.suff.data.act.vec)
 
 # studies with sufficient data with active and passive controls
 studies.suff.data.mix.num; unique(studies.suff.data.mix.vec)
+
+# Number of studies with sufficient data for either active or passive controls
+unique(c(studies.suff.data.pas.vec, studies.suff.data.act.vec)) %>% length();
+unique(c(studies.suff.data.pas.vec, studies.suff.data.act.vec))
 
 # %% [markdown]
 # # Sensitivity Analysis
@@ -14229,7 +14233,7 @@ plot.summary.forest(net.res.all)
 options(repr.plot.width = 6, repr.plot.height = 20, repr.plot.res = 150)
 
 # %% hidden=true vscode={"languageId": "r"}
-# devtools::install_github("mcguinlu/robvis")  # install robvis from github so it includes the rob_forest function
+devtools::install_github("mcguinlu/robvis")  # install robvis from github so it includes the rob_forest function
 library("robvis")
 
 # %% hidden=true vscode={"languageId": "r"}
@@ -14237,6 +14241,8 @@ outcome.names.df
 
 # %% hidden=true vscode={"languageId": "r"}
 rob.df
+
+# %% vscode={"languageId": "r"}
 
 # %% hidden=true vscode={"languageId": "r"}
 rob_traffic_light(
@@ -14332,7 +14338,7 @@ version.df <- data.frame(
   Version = c(versions)
 ) |> arrange(Package)
 
-write.csv(t(version.df), "lib.versions.csvcsv")
+write.csv(t(version.df), "lib.versions.csv")
 version.df
 
 # %% hidden=true vscode={"languageId": "r"}
@@ -14616,13 +14622,13 @@ print.meta.results("Resilience Scale")
 # #### Anxiety
 
 # %% hidden=true vscode={"languageId": "r"}
-print.meta.results("Anxiety (state)")
+print.meta.results("Anxiety")
 
 # %% hidden=true vscode={"languageId": "r"}
-results.metafor.anxiety.t <- print.meta.results("Anxiety (trait)", return.data = "results.metafor", regression = T, regression.multiple = F)
+results.metafor.anxiety.t <- print.meta.results("Anxiety", return.data = "results.metafor", regression = T, regression.multiple = F)
 
 # %% hidden=true vscode={"languageId": "r"}
-print.meta.results("Anxiety (trait)", filter.forest..funnel.vec = -c(6), regression = F, split.subgroups = F, print.influence = F)
+print.meta.results("Anxiety", filter.forest..funnel.vec = -c(6), regression = F, split.subgroups = F, print.influence = F)
 
 # %% hidden=true vscode={"languageId": "r"}
 for (outlier in c(6)){
@@ -14634,10 +14640,10 @@ for (outlier in c(6)){
 # #### Depression
 
 # %% hidden=true vscode={"languageId": "r"}
-results.metafor.depression.t <- print.meta.results("Depression (trait)", return.data = "results.metafor")
+results.metafor.depression.t <- print.meta.results("Depression", return.data = "results.metafor")
 
 # %% hidden=true vscode={"languageId": "r"}
-print.meta.results("Depression (trait)", filter.forest..funnel.vec = -c(1, 2, 7), regression = F, split.subgroups = F, print.influence = F)
+print.meta.results("Depression", filter.forest..funnel.vec = -c(1, 2, 7), regression = F, split.subgroups = F, print.influence = F)
 
 # %% hidden=true vscode={"languageId": "r"}
 for (outlier in c(1, 2, 7)){
@@ -15089,14 +15095,14 @@ print.meta.results("Hope")
 print.meta.results("Mindfulness (state)")
 
 # %% hidden=true vscode={"languageId": "r"}
-results.metfor.mindfulness.t <- print.meta.results("Mindfulness (trait)", return.data = "results.metafor")
+results.metfor.mindfulness.t <- print.meta.results("Mindfulness", return.data = "results.metafor")
 
 # %% hidden=true vscode={"languageId": "r"}
-results.metfor.mindfulness.t.ex.rob <- print.meta.results("Mindfulness (trait)", exclude.high.rob.vec = studies.high.rob, return.data = "results.metafor")  # exclude Johnson-Waddell 2018 (No. 3)
+results.metfor.mindfulness.t.ex.rob <- print.meta.results("Mindfulness", exclude.high.rob.vec = studies.high.rob, return.data = "results.metafor")  # exclude Johnson-Waddell 2018 (No. 3)
 
 # %% hidden=true vscode={"languageId": "r"}
 # exclude outlier
-print.meta.results("Mindfulness (trait)", filter.forest..funnel.vec = -c(9), regression = F, split.subgroups = F, print.influence = F)
+print.meta.results("Mindfulness", filter.forest..funnel.vec = -c(9), regression = F, split.subgroups = F, print.influence = F)
 
 # %% hidden=true vscode={"languageId": "r"}
 for (outlier in c(9)){
@@ -15106,7 +15112,7 @@ for (outlier in c(9)){
 
 # %% hidden=true vscode={"languageId": "r"}
 # exclude both
-print.meta.results("Mindfulness (trait)", filter.forest..funnel.vec = -c(3, 9))
+print.meta.results("Mindfulness", filter.forest..funnel.vec = -c(3, 9))
 
 # %% hidden=true vscode={"languageId": "r"}
 for (outlier in c(8)){
