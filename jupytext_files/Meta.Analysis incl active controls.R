@@ -16,13 +16,14 @@
 
 # %% [markdown] vscode={"languageId": "r"}
 # ToDos:
-# - Assign meditation techniques to categories (e.g., focused attention, open monitoring, loving-kindness, body scan, etc.)
-# - Assign Scales to outcomes
-# - Implement additional outcomes and interventions from theresa
-# - Define outliers
-# - Cluster interventions
-# - look for additional manual tasks
-#
+# - [] Assign meditation techniques to categories (e.g., focused attention, open monitoring, loving-kindness, body scan, etc.)
+# - [] Assign Scales to outcomes
+# - [x] Implement additional outcomes and interventions from theresa
+# - Check if 5th and 6th intervention are added correctly
+# - [] Define outliers
+# - [] Cluster interventions
+# - [] look for additional manual tasks
+# - [] Check if addition of 6th intervention affects the med.vec.list variable
 
 # %% [markdown]
 # # Preprocess Data
@@ -853,24 +854,26 @@ population.characteristics.array <- clean.and.shape.data.to.array(
   my.df, start, end, dims, dimname.list, nm.placeholder, study.no
 )
 
-# add 5th intervention to array that was not expected to be present but was in one study
-## create empty array with with one more level at the second dimension (interventions)
-temp.array <- array(NA, dim=c(4, 6, 4, study.no))
+# add 5th and 6th interventions to array that were not expected to be present but were in some studies
+## create empty array with two more levels at the second dimension (interventions)
+temp.array <- array(NA, dim=c(4, 7, 4, study.no))
 
 ## insert the previous array
-temp.array[,-6,,] <- population.characteristics.array
+temp.array[,1:5,,] <- population.characteristics.array
 population.characteristics.array <- temp.array
 
-## set 5th intervention on 5th position
-population.characteristics.array[,6,,] <- temp.array[,5,,]
-population.characteristics.array[,5,,] <- temp.array[,6,,]
+## set interventions in correct positions (5th intervention at position 5, Over.All at position 7)
+population.characteristics.array[,7,,] <- temp.array[,5,,]  # Move Over.All to position 7
+population.characteristics.array[,5,,] <- NA  # Clear position 5 for Intervention.5
+population.characteristics.array[,6,,] <- NA  # Clear position 6 for Intervention.6
 
 ## add dimnames to new array
-dimname.list <- list(c("No.Participants", "Mean.Age", "No.Females", "No.Males"),
-                     c("Intervention.1", "Intervention.2", "Intervention.3", "Intervention.4", "Intervention.5", "Over.All"),
-                     c("T0", "T1", "T2", "T3"),
-                     my.df[,"Study.ID"]
-                     )
+dimname.list <- list(
+  c("No.Participants", "Mean.Age", "No.Females", "No.Males"),
+  c("Intervention.1", "Intervention.2", "Intervention.3", "Intervention.4", "Intervention.5", "Intervention.6", "Over.All"),
+  c("T0", "T1", "T2", "T3"),
+  my.df[,"Study.ID"]
+)
 dimnames(population.characteristics.array) <- dimname.list
 
 my.df <- my.df %>%
@@ -879,10 +882,18 @@ my.df <- my.df %>%
 print.array.not.na(population.characteristics.array)
 
 
+# %% vscode={"languageId": "r"}
+# Show names of dimensions for population.characteristics.array to understand indexing below
+dimnames(population.characteristics.array)
+
 # %% hidden=true vscode={"languageId": "r"}
 # add number of participants at pre-test of 5th intervention for "Klibert 2022"
 population.characteristics.array[1,5,1,"Klibert 2022"] <- 30
 print.array.not.na(population.characteristics.array[,,,"Klibert 2022"])
+
+# add number of participants at pre-test of 5th and 6th intervention for "Nath 2023"
+population.characteristics.array[1,5:6,1,"Nath 2023"] <- c(13, 13)
+print.array.not.na(population.characteristics.array[,,,"Nath 2023"])
 
 # %% [markdown] heading_collapsed=true hidden=true
 # #### Results Descriptive
@@ -914,7 +925,7 @@ temp.array[-5,,,,,] <- results.descriptive.array
 results.descriptive.array <- temp.array
 
 ## add dimnames to new array
-dimname.list <- list(c("Intervention.1", "Intervention.2", "Intervention.3", "Control", "Intervention.5"),
+dimname.list <- list(c("Intervention.1", "Intervention.2", "Intervention.3", "Control", "Intervention.5", "Intervention.6"),
                      c("Mean", "SD", "n"),
                      c("T0", "T1", "T2", "T3"),
                      c("Outcome.1", "Outcome.2", "Outcome.3", "Outcome.4", "Outcome.5", "Outcome.6", "Outcome.7"),
@@ -928,6 +939,10 @@ print.array.not.na(results.descriptive.array)
 my.df <- my.df %>%
   select(-Intervention.1.Mean.O1T0:-Control.or.Intervention.4.n.in.case.of.period.O7T3)
 
+
+# %% vscode={"languageId": "r"}
+# Show names of dimensions for results.descriptive.array to understand indexing below
+dimnames(results.descriptive.array)
 
 # %% hidden=true vscode={"languageId": "r"}
 # add descriptive results of 5th intervention for "Klibert 2022"
@@ -1031,23 +1046,23 @@ intervention.comparisons.df.list.w.o.mean.r <- clean.data.to.df.list.swap(
  my.df, start, end, dims, study.names, dimname.list, flag.x.s.r = 1
 )
 
-# add 5th intervention to df list that was not expected to be present but was in one study
-## creat NA df om dimension 1, 7
-int.5.df <- data.frame(matrix(
-  NA, nrow = 1, ncol = 7,
+# add 5th and 6th intervention to df list that was not expected to be present but was in one study
+## create NA df on dimension 2, 7 (2 rows for interventions 5 and 6)
+int.5.6.df <- data.frame(matrix(
+  NA, nrow = 2, ncol = 7,
   dimnames = list(
-    c("Intervention.5"),
+    c("Intervention.5", "Intervention.6"),
     dimname.list[[2]]
   )
 ))
 
-## append this df as 5th intervention
+## append this df as 5th and 6th intervention
 for (df.i in 1:study.no){
   intervention.comparisons.df.list[[df.i]] <-
-    rbind(intervention.comparisons.df.list[[df.i]], int.5.df)
+    rbind(intervention.comparisons.df.list[[df.i]], int.5.6.df)
   
   intervention.comparisons.df.list.w.o.mean.r[[df.i]] <-
-    rbind(intervention.comparisons.df.list.w.o.mean.r[[df.i]], int.5.df)
+    rbind(intervention.comparisons.df.list.w.o.mean.r[[df.i]], int.5.6.df)
 }
 
 my.df <- my.df %>%
@@ -1055,6 +1070,9 @@ my.df <- my.df %>%
 
 intervention.comparisons.df.list
 
+
+# %% vscode={"languageId": "r"}
+intervention.comparisons.df.list[["Nath 2023"]] %>% names
 
 # %% hidden=true vscode={"languageId": "r"}
 # add 5th intervention's descriptions of Klibert 2022
@@ -1086,6 +1104,68 @@ intervention.comparisons.df.list.w.o.mean.r[["Klibert 2022"]]["Intervention.5", 
   1
 )
 intervention.comparisons.df.list.w.o.mean.r[["Klibert 2022"]]
+
+# add 5th and 6th intervention's descriptions of Nath 2023
+## 5th intervention
+### 'Name', 'Short.Description', 'Delivery.Mode', 'Meditation.App'
+intervention.comparisons.df.list[["Nath 2023"]]["Intervention.5", c(1:4)] <- c(
+  "CA essential oil and mindfulness",
+  "The students in the aromatherapy and mindfulness meditation groups applied 1 drop of oil to their masks and put on their masks for 30 min. while practicing the mindfulness meditation based on the audio recording.",
+  "at home with recording",
+  "none"
+)
+
+### 'Sessions.Duration.in.minutes', 'Frequency.in.times.per.week', 'Total.Duration.in.Days'
+intervention.comparisons.df.list[["Nath 2023"]]["Intervention.5", c(5:7)] <- c(
+  30,
+  7,
+  15
+)
+
+intervention.comparisons.df.list.w.o.mean.r[["Nath 2023"]]["Intervention.5", c(1:4)] <- c(
+  "CA essential oil and mindfulness",
+  "The students in the aromatherapy and mindfulness meditation groups applied 1 drop of oil to their masks and put on their masks for 30 min. while practicing the mindfulness meditation based on the audio recording.",
+  "at home with recording",
+  "none"
+)
+
+intervention.comparisons.df.list.w.o.mean.r[["Nath 2023"]]["Intervention.5", c(5:7)] <- c(
+  30,
+  7,
+  15
+)
+
+## 6th intervention
+### 'Name', 'Short.Description', 'Delivery.Mode', 'Meditation.App'
+intervention.comparisons.df.list[["Nath 2023"]]["Intervention.6", c(1:4)] <- c(
+  "mindfulness",
+  "The students in the meditation group practiced mindfulness meditation by listening to pre-recorded audio for 30 min.",
+    "at home with recording",
+    "none"
+)
+
+### 'Sessions.Duration.in.minutes', 'Frequency.in.times.per.week', 'Total.Duration.in.Days'
+intervention.comparisons.df.list[["Nath 2023"]]["Intervention.6", c(5:7)] <- c(
+  30,
+  7,
+  15
+)
+
+intervention.comparisons.df.list[["Nath 2023"]]
+
+intervention.comparisons.df.list.w.o.mean.r[["Nath 2023"]]["Intervention.6", c(1:4)] <- c(
+  "mindfulness",
+  "The students in the meditation group practiced mindfulness meditation by listening to pre-recorded audio for 30 min.",
+    "at home with recording",
+    "none"
+)
+
+intervention.comparisons.df.list.w.o.mean.r[["Nath 2023"]]["Intervention.6", c(5:7)] <- c(
+  30,
+  7,
+  15
+)
+intervention.comparisons.df.list.w.o.mean.r[["Nath 2023"]]
 
 # %% [markdown] hidden=true
 #
@@ -1290,16 +1370,16 @@ rownames(meditation.techniques.df) <- study.names
 my.df <- my.df %>%
   select(-Practiced.Techniques.in.Intervention.1:-Practiced.Techniques.in.Control.or.Intervention.4)
 
-# add 5th intervention
-int.5.df <- data.frame(matrix(
-  NA, nrow = study.no, ncol = 1,
+# add 5th and 6th interventions
+int.5.6.df <- data.frame(matrix(
+  NA, nrow = study.no, ncol = 2,
   dimnames = list(
     study.names,
-    c("Practiced.Techniques.in.Intervention.5")
+    c("Practiced.Techniques.in.Intervention.5", "Practiced.Techniques.in.Intervention.6")
   )
 ))
 
-meditation.techniques.df <- cbind(meditation.techniques.df, int.5.df)
+meditation.techniques.df <- cbind(meditation.techniques.df, int.5.6.df)
 
 meditation.techniques.df
 
@@ -1308,6 +1388,11 @@ meditation.techniques.df
 # add meditation tech of Klibert 2022
 meditation.techniques.df["Klibert 2022", "Practiced.Techniques.in.Intervention.5"] <- "Other: self-review of emotions, reading of text of joy and optimism"
 meditation.techniques.df["Klibert 2022",]
+
+# add meditation tech of Nath 2023
+meditation.techniques.df["Nath 2023", "Practiced.Techniques.in.Intervention.5"] <- "Other: Aromatherapy + mindfulness meditation"
+meditation.techniques.df["Nath 2023", "Practiced.Techniques.in.Intervention.6"] <- "mindfulness meditation"
+meditation.techniques.df["Nath 2023",]
 
 # %% [markdown] heading_collapsed=true hidden=true
 # #### RoB Data
@@ -1980,6 +2065,11 @@ for (cont.i in 1:length(control.all.list)){
 
 # %% [markdown] editable=true slideshow={"slide_type": ""}
 # ### Scales
+
+# %% [markdown]
+# ToDo: Add the following scales:
+# - Short Warwick-Edinburgh Mental Well-being Scale (SWEMWBS) 
+# - Sussex-Oxford Compassion for the Self Scale (SOCS-S)
 
 # %% vscode={"languageId": "r"}
 # find out all unique scale cell entries
@@ -3118,7 +3208,7 @@ for (study in 1:study.no){
   for (scale in 1:2){
     for (outcome in 1:7){
       for (t in 1:4){
-        for (intervention in 1:5){
+        for (intervention in 1:6){
           int.name <- intervention.comparisons.df.list[[study]][intervention, "Name"]
           no.incl.outcomes <- one.D.info.df[study, "Number.of.included.Outcomes"]
           if (grepl(",", outcome.measures.df.list[[study]][outcome, "Measures.Name"])){
@@ -3248,7 +3338,7 @@ for (study in 1:study.no){
     no.participants.vec <- c()
     mean.age.vec <- c()
     t.range <- c(1,0)
-    for (intervention in 1:5){
+    for (intervention in 1:6){
       for (t in t.range){
         
         try(
@@ -3307,7 +3397,7 @@ population.characteristics.array <- abind(
 
 dimnames(population.characteristics.array) <- list(
   c("No.Participants", "Mean.Age", "No.Females", "No.Males", "Females.Percent", "Males.Percent", "Diverse.Percent"),
-  c("Intervention.1", "Intervention.2", "Intervention.3", "Intervention.4", "Intervention.5", "Over.All"),
+  c("Intervention.1", "Intervention.2", "Intervention.3", "Intervention.4", "Intervention.5", "Intervention.6", "Over.All"),
   c("T0", "T1", "T2", "T3"),
   my.df[,"Study.ID"]
 )
@@ -3854,7 +3944,7 @@ meditation.techniques.df["Forsyth 2017",] %in% meditation.type.all
 # %% hidden=true vscode={"languageId": "r"}
 # install.packages("esc")
 # install.packages("meta")
-# install.packages("metafor")
+# devtools::install_version("metafor", version = "4.2-0")
 # install.packages("gridExtra")
 # install.packages(c("fpc", "mclust"))
 
@@ -7745,7 +7835,7 @@ cat(participants.info)
 # %% hidden=true vscode={"languageId": "r"}
 count.int <- function(study, nm.placeholder){
   int.count <- 0
-  for (int in 1:5){
+  for (int in 1:6){
     if(!(
       is.na(intervention.comparisons.df.list[[study]][int, "Name"]) |
       intervention.comparisons.df.list[[study]][int, "Name"] %in%
@@ -8802,7 +8892,7 @@ for (outcome in outcomes.no.ordered.freq.df$Outcome){
   ### count
   for (study in uni.stud.p.outcome.act.only){
     if (!study %in% studies.suff.data.act.vec){
-      studies.suff.data.act.num <- <- studies.suff.data.act.num + 1
+      studies.suff.data.act.num <- studies.suff.data.act.num + 1
     }
   }
   
@@ -10970,7 +11060,7 @@ res.overall; res.overall.n.o.
 # ## Overall network meta-analysis
 
 # %% hidden=true vscode={"languageId": "r"}
-# install.packages("igraph")
+install.packages("igraph")
 library(igraph)
 
 # %% [markdown] heading_collapsed=true hidden=true
@@ -12786,7 +12876,7 @@ return.outcome.output <- function(output, outcome.vec, preferred.scale = FALSE){
 
     output[[paste("gosh.1.", outcome.alias, ".forest.comp", sep = "")]] <- renderImage({
       list(
-        src = paste(gsub("/", "\\\\", getwd()), "\\", "Gosh.Plot.", outcome, ".outlier.1", ".png", sep = ""),
+        src = paste(gsub("/", "\\\\", getwd()), "\\", "Gosh Plots", "\\", "Gosh.Plot.", outcome, ".outlier.1", ".png", sep = ""),
         contentType = 'image/png',
         width = picture.size,
         height = picture.size
@@ -12795,7 +12885,7 @@ return.outcome.output <- function(output, outcome.vec, preferred.scale = FALSE){
 
     output[[paste("gosh.2.", outcome.alias, ".forest.comp", sep = "")]] <- renderImage({
       list(
-        src = paste(gsub("/", "\\\\", getwd()), "\\", "Gosh.Plot.", outcome, ".outlier.2", ".png", sep = ""),
+        src = paste(gsub("/", "\\\\", getwd()), "\\", "Gosh Plots", "\\", "Gosh.Plot.", outcome, ".outlier.2", ".png", sep = ""),
         contentType = 'image/png',
         width = picture.size,
         height = picture.size
@@ -12804,7 +12894,7 @@ return.outcome.output <- function(output, outcome.vec, preferred.scale = FALSE){
 
     output[[paste("gosh.3.", outcome.alias, ".forest.comp", sep = "")]] <- renderImage({
       list(
-        src = paste(gsub("/", "\\\\", getwd()), "\\", "Gosh.Plot.", outcome, ".outlier.3", ".png", sep = ""),
+        src = paste(gsub("/", "\\\\", getwd()), "\\", "Gosh Plots", "\\", "Gosh.Plot.", outcome, ".outlier.3", ".png", sep = ""),
         contentType = 'image/png',
         width = picture.size,
         height = picture.size
@@ -13859,7 +13949,7 @@ return.outcome.output <- function(output, outcome.vec, preferred.scale = FALSE){
 
 #     output[[paste("gosh.1.", outcome.alias, ".forest.comp", sep = "")]] <- renderImage({
 #       list(
-#         src = paste(gsub("/", "\\\\", getwd()), "\\", "Gosh.Plot.", outcome, ".outlier.1", ".png", sep = ""),
+#         src = paste(gsub("/", "\\\\", getwd()), "\\", "Gosh Plots", "\\", "Gosh.Plot.", outcome, ".outlier.1", ".png", sep = ""),
 #         contentType = 'image/png',
 #         width = picture.size,
 #         height = picture.size
@@ -13868,7 +13958,7 @@ return.outcome.output <- function(output, outcome.vec, preferred.scale = FALSE){
 
 #     output[[paste("gosh.2.", outcome.alias, ".forest.comp", sep = "")]] <- renderImage({
 #       list(
-#         src = paste(gsub("/", "\\\\", getwd()), "\\", "Gosh.Plot.", outcome, ".outlier.2", ".png", sep = ""),
+#         src = paste(gsub("/", "\\\\", getwd()), "\\", "Gosh Plots", "\\", "Gosh.Plot.", outcome, ".outlier.2", ".png", sep = ""),
 #         contentType = 'image/png',
 #         width = picture.size,
 #         height = picture.size
@@ -13877,7 +13967,7 @@ return.outcome.output <- function(output, outcome.vec, preferred.scale = FALSE){
 
 #     output[[paste("gosh.3.", outcome.alias, ".forest.comp", sep = "")]] <- renderImage({
 #       list(
-#         src = paste(gsub("/", "\\\\", getwd()), "\\", "Gosh.Plot.", outcome, ".outlier.3", ".png", sep = ""),
+#         src = paste(gsub("/", "\\\\", getwd()), "\\", "Gosh Plots", "\\", "Gosh.Plot.", outcome, ".outlier.3", ".png", sep = ""),
 #         contentType = 'image/png',
 #         width = picture.size,
 #         height = picture.size
@@ -13948,45 +14038,53 @@ return.outcome.output <- function(output, outcome.vec, preferred.scale = FALSE){
 # ## Save all Gosh Plots as .png (making dashboard faster)
 
 # %% hidden=true vscode={"languageId": "r"}
-# plot.group.list <- list(
-#   main.effects = outlier.list,
-#   regressions.single = list(
-#     list(
-#       # only outcomes for that a regression gets calculated
-#       # per outcome...
-#       programs.duration = c(),
-#       sessions.duration = c(),
-#       programs.frequency = c(),
-#       follow.up.period = c()
-#     )
-#   )
-# )
+plot.group.list <- list(
+  main.effects = outlier.list,
+  regressions.single = list(
+    list(
+      # only outcomes for that a regression gets calculated
+      # per outcome...
+      programs.duration = c(),
+      sessions.duration = c(),
+      programs.frequency = c(),
+      follow.up.period = c()
+    )
+  )
+)
 
-# preferred.scale <- "PSS"
-# frame.size <- 11
-# resolution.png <- 600
+preferred.scale <- "PSS"
+frame.size <- 11
+resolution.png <- 600
 
-# for (outcome in present.outcomes){  # index over present.outcomes all outcomes
-#   results.metafor <- print.meta.results(
-#     outcome, preferred.scale = if(outcome == "Stress"){preferred.scale}else{FALSE}, return.data = "results.metafor",
-#     print.forest = F, print.funnel = F, print.meta.results = F, split.subgroups = F, print.influence = F, regression = F, print.baujat = F
-#   )
+for (outcome in present.outcomes){  # index over present.outcomes all outcomes
+  results.metafor <- print.meta.results(
+    outcome, preferred.scale = if(outcome == "Stress"){preferred.scale}else{FALSE}, return.data = "results.metafor",
+    print.forest = F, print.funnel = F, print.meta.results = F, split.subgroups = F, print.influence = F, regression = F, print.baujat = F
+  )
   
-#   for (plot.group.name in "main.effects"){ # index over names(plot.group) insead of "main.effects" to get also the regression gosh plots
-#     i <- 1
-#     for (outlier in plot.group.list[["main.effects"]][[outcome]]){  # index over plot.group.name insead of "main.effects" to get also the regression gosh plots
-#       png(
-#         paste("Gosh.Plot.", outcome, if(outcome == "Stress"){paste(".", preferred.scale)}else{""}, ".outlier.", i, ".png", sep = ""),
-#         width=frame.size, height=frame.size, units="in", res=resolution.png
-#       )
-#       par(mar=c(frame.size,frame.size,1,1))
-#       sav <- gosh(results.metafor)
-#       plot(sav, out = outlier)
-#       dev.off()
-#       i <- i + 1
-#     }
-#   }
-# }
+  for (plot.group.name in "main.effects"){ # index over names(plot.group) insead of "main.effects" to get also the regression gosh plots
+    i <- 1
+    for (outlier in plot.group.list[["main.effects"]][[outcome]]){  # index over plot.group.name insead of "main.effects" to get also the regression gosh plots
+      png(
+        file.path(
+          "Gosh Plots",
+          paste0(
+            "Gosh.Plot.",
+            outcome,
+            if(outcome == "Stress"){paste0(".", preferred.scale)}else{""},
+            ".outlier.", i, ".png"
+          )
+        ),
+        width=frame.size, height=frame.size, units="in", res=resolution.png
+      )
+      par(mar=c(frame.size,frame.size,1,1))
+      sav <- gosh(results.metafor)
+      plot(sav, out = outlier)
+      dev.off()
+      i <- i + 1
+    }
+  }
+}
 
 # %% [markdown]
 # ## Dashboard
@@ -14233,7 +14331,7 @@ plot.summary.forest(net.res.all)
 options(repr.plot.width = 6, repr.plot.height = 20, repr.plot.res = 150)
 
 # %% hidden=true vscode={"languageId": "r"}
-devtools::install_github("mcguinlu/robvis")  # install robvis from github so it includes the rob_forest function
+# devtools::install_github("mcguinlu/robvis")  # install robvis from github so it includes the rob_forest function
 library("robvis")
 
 # %% hidden=true vscode={"languageId": "r"}
@@ -20069,7 +20167,7 @@ print.meta.results(
 
 #     output[[paste("gosh.1.", outcome.alias, ".forest.comp", sep = "")]] <- renderImage({
 #       list(
-#         src = paste(gsub("/", "\\\\", getwd()), "\\", "Gosh.Plot.", outcome, ".outlier.1", ".png", sep = ""),
+#         src = paste(gsub("/", "\\\\", getwd()), "\\", "Gosh Plots", "\\", "Gosh.Plot.", outcome, ".outlier.1", ".png", sep = ""),
 #         contentType = 'image/png',
 #         width = picture.size,
 #         height = picture.size
@@ -20078,7 +20176,7 @@ print.meta.results(
 
 #     output[[paste("gosh.2.", outcome.alias, ".forest.comp", sep = "")]] <- renderImage({
 #       list(
-#         src = paste(gsub("/", "\\\\", getwd()), "\\", "Gosh.Plot.", outcome, ".outlier.2", ".png", sep = ""),
+#         src = paste(gsub("/", "\\\\", getwd()), "\\", "Gosh Plots", "\\", "Gosh.Plot.", outcome, ".outlier.2", ".png", sep = ""),
 #         contentType = 'image/png',
 #         width = picture.size,
 #         height = picture.size
@@ -20087,7 +20185,7 @@ print.meta.results(
 
 #     output[[paste("gosh.3.", outcome.alias, ".forest.comp", sep = "")]] <- renderImage({
 #       list(
-#         src = paste(gsub("/", "\\\\", getwd()), "\\", "Gosh.Plot.", outcome, ".outlier.3", ".png", sep = ""),
+#         src = paste(gsub("/", "\\\\", getwd()), "\\", "Gosh Plots", "\\", "Gosh.Plot.", outcome, ".outlier.3", ".png", sep = ""),
 #         contentType = 'image/png',
 #         width = picture.size,
 #         height = picture.size
@@ -20320,7 +20418,7 @@ print.meta.results(
 
 #     output[[paste("gosh.1.", outcome.alias, ".forest.comp", sep = "")]] <- renderImage({
 #       list(
-#         src = paste(gsub("/", "\\\\", getwd()), "\\", "Gosh.Plot.", outcome, ".outlier.1", ".png", sep = ""),
+#         src = paste(gsub("/", "\\\\", getwd()), "\\", "Gosh Plots", "\\", "Gosh.Plot.", outcome, ".outlier.1", ".png", sep = ""),
 #         contentType = 'image/png',
 #         width = picture.size,
 #         height = picture.size
@@ -20329,7 +20427,7 @@ print.meta.results(
 
 #     output[[paste("gosh.2.", outcome.alias, ".forest.comp", sep = "")]] <- renderImage({
 #       list(
-#         src = paste(gsub("/", "\\\\", getwd()), "\\", "Gosh.Plot.", outcome, ".outlier.2", ".png", sep = ""),
+#         src = paste(gsub("/", "\\\\", getwd()), "\\", "Gosh Plots", "\\", "Gosh.Plot.", outcome, ".outlier.2", ".png", sep = ""),
 #         contentType = 'image/png',
 #         width = picture.size,
 #         height = picture.size
@@ -20338,7 +20436,7 @@ print.meta.results(
 
 #     output[[paste("gosh.3.", outcome.alias, ".forest.comp", sep = "")]] <- renderImage({
 #       list(
-#         src = paste(gsub("/", "\\\\", getwd()), "\\", "Gosh.Plot.", outcome, ".outlier.3", ".png", sep = ""),
+#         src = paste(gsub("/", "\\\\", getwd()), "\\", "Gosh Plots", "\\", "Gosh.Plot.", outcome, ".outlier.3", ".png", sep = ""),
 #         contentType = 'image/png',
 #         width = picture.size,
 #         height = picture.size
@@ -24023,7 +24121,7 @@ correct.color.order.forest <- c('white','white','gray95','gray95','gray95','gray
 #     no.participants.vec <- c()
 #     mean.age.vec <- c()
 #     t.range <- c(1,0)
-#     for (intervention in 1:4){
+#     for (intervention in 1:6){
 #       for (t in t.range){
         
 #         try(
