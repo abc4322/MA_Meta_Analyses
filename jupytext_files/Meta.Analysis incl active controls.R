@@ -17,11 +17,12 @@
 # %% [markdown] vscode={"languageId": "r"}
 # ToDos:
 # - [x] Assign meditation techniques to categories (e.g., focused attention, open monitoring, loving-kindness, body scan, etc.)
-# - [] Assign Scales to outcomes
+# - [x] Assign Scales to outcomes
 # - [x] Implement additional outcomes and interventions from theresa
-# - [] Define outliers
-# - [] look for additional manual tasks
-# - [] Check if addition of 6th intervention affects the med.vec.list variable
+# - [] Define outliers and influential cases
+# - [] Define studies causing inconsistency
+# - [x] Check if addition of 6th intervention affects the med.vec.list variable
+# - [] fix update.meta bug
 
 # %% [markdown]
 # # Preprocess Data
@@ -222,9 +223,10 @@ my.df[4, "Outcome.3.Scale.s.or.other.Measure.s.Name"] <-
 "Depression Anxiety and Stress Scale (DASS), Perceived Stress Scale (PSS)"
 
 # %% vscode={"languageId": "r"}
-# Remove "Other:" outcomes
+# Adjust my.df for systematic fixes
 my.df <- my.df %>%
   mutate(
+    # Remove "Other:" outcomes
     across(
       starts_with("Name.of.Outcome."),
       ~ case_when(
@@ -232,9 +234,19 @@ my.df <- my.df %>%
         TRUE ~ .x
       )
     ),
+    # Adjust duration of intervention sessions
     Duration.of.single.intervention.sessions.in.minutes.Intervention.1 = case_when(
       Duration.of.single.intervention.sessions.in.minutes.Intervention.1 == "600 (five two hour sessions)" ~ "120",
       TRUE ~ Duration.of.single.intervention.sessions.in.minutes.Intervention.1
+    ),
+    # Remove commas from scale names
+    across(
+      ends_with("Scale.s.or.other.Measure.s.Name"),
+      ~ case_when(
+        .x == "DASS - Depression, Anxiety, and Stress Scale" ~ "DASS - Depression Anxiety and Stress Scale",
+        .x == "10- item Perceive Stress scale (PSS, Klein et al. 2016)" ~ "The Perceived Stress Scale (PSS)",
+        TRUE ~ .x
+      )
     )
   )
 
@@ -2166,7 +2178,8 @@ scale.DASS.synonyms <- c(
   "Depression, Anxiety, and Stress Scale â€“ 21 (DASS-21),subscale stress",
   "Depression Anxiety Stress Scales [DASS]; Lovibond and Lovibond 1995",
   "Depression Anxiety Scale 21 (DASS21; Henry and Crawford 2005)", "Depression Anxiety Scale 21 (DASS21; Henry and Crawford 2005)", "Depression Anxiety Scale 21 (DASS21; Henry and Crawford 2005)", "Depression Anxiety and Stress Scale‐21 (DASS‐21; Antony Bieling Cox Enns & Swinson 1998)", "Depression Anxiety and Stress Scale‐21 (DASS‐21; Antony Bieling Cox Enns & Swinson 1998)",
-  "Depression Anxiety and Stress Scale‐21 (DASS‐21; Antony Bieling Cox Enns & Swinson 1998)", "Depression Anxiety Stress Scales (DASS-42)", "Depression Anxiety Stress Scales (DASS-42)", "Depression Anxiety Stress Scales (DASS-42)", "Depression Anxiety and Stress Scale – 21 (DASS-21) subscale depression", "Depression Anxiety and Stress Scale – 21 (DASS-21) subscale anxiety", "Depression Anxiety and Stress Scale – 21 (DASS-21) subscale stress"
+  "Depression Anxiety and Stress Scale‐21 (DASS‐21; Antony Bieling Cox Enns & Swinson 1998)", "Depression Anxiety Stress Scales (DASS-42)", "Depression Anxiety Stress Scales (DASS-42)", "Depression Anxiety Stress Scales (DASS-42)", "Depression Anxiety and Stress Scale – 21 (DASS-21) subscale depression", "Depression Anxiety and Stress Scale – 21 (DASS-21) subscale anxiety", "Depression Anxiety and Stress Scale – 21 (DASS-21) subscale stress",
+  " DASS - Depression, Anxiety, and Stress Scale"
 )
 
 scale.POMS.synonyms <- c(
@@ -2248,7 +2261,10 @@ scale.STICSA.synonyms <- c(
 )
 
 scale.GAD.7.synonyms <- c(
-  "Generalized Anxiety Disorder (GAD-7) subscale", "Generalized Anxiety Disorder 7-item scale (GAD-7; Spitzer et al. 2006)"
+  "Generalized Anxiety Disorder (GAD-7) subscale",
+  "Generalized Anxiety Disorder 7-item scale (GAD-7; Spitzer et al. 2006)",
+  "Generalized Anxiety Disorder Scale-7 (GAD-7)",
+  "Genarilzed Anxiety Disorder scale (GAD7; Spitzer et al. 2006)"
 )
 
 scale.CAS.synonyms <- c(
@@ -2263,13 +2279,15 @@ scale.CAS.synonyms <- c(
 # %% hidden=true vscode={"languageId": "r"}
 scale.BDI.synonyms <- c(
   "Beck Depression Inventory (BDI [72])",
-  "Beck Depression Inventory (BDI)"
-)
+  "Beck Depression Inventory (BDI)",
+  "Beck Depression Inventory-II; BDI-II (Beck et al. 1996)",
+  'BDI; Depressive symptomatology; "Beck Depression Inventory (BDI)')
 
 scale.PHQ.9.synonyms <- c(
   "Patient Health Questionnaire-9 (PHQ-9; Kroenke & Spitzer, 2002)",
   "Patient Health Questionnaire-9 (PHQ-9)",
-  " Patient Health Questionnaire-9 (PHQ-9)"
+  " Patient Health Questionnaire-9 (PHQ-9)",
+  "Patient Health Questionnaire- 8 scale (Kroenke et al. 2009)"
 )
 
 scale.QIDS.SR.synonyms <- c(
@@ -2306,7 +2324,10 @@ scale.PSS.synonyms <- c(
   "Perceived Stress Scale (PSS-10) (Cohen, 2017)",
   "erceived Stress Scale (PSS [74])",
   "Perceived Stress Scale (PSS; Cohen and Williamson 1988)", "Perceived Stress Scale (PSS; Cohen and Williamson 1988)", "Perceived Stress Scale (PSS; Cohen, Kamarck & Mermelstein 1983)", "Perceived Stress Scale (PSS; S. Cohen et al. 1983)", "Perceived Stress Scale (PSS; Cohen et al. 1983) ",
-  "Perceived Stress Scale"
+  "Perceived Stress Scale",
+  "10- item Perceive Stress scale (PSS Klein et al. 2016)",
+  "Perceived Stress Scale (PSS) (Cohen et al. 1983)",
+  "Perceived Stress Scale (14 Items)"
 )
 
 scale.BRS.synonyms <- c(
@@ -2431,14 +2452,17 @@ scale.CAMS.R.synonyms <- c(
   "Cognitive and Affective Mindfulness Scale â€“ Revised (CAMS-R)",
   "Cognitive and Affective Mindfulness\nScale-Revised (CAMS-R; Feldman et al., 2007)",
   "12-item\nCognitive Affective Mindfulness Scale–Revised (Feldman\net al. 2007)",
-  "Cognitive Affective Mindfulness Scale–Revised (Feldman et al. 2007)"
+  "Cognitive Affective Mindfulness Scale–Revised (Feldman et al. 2007)",
+  " Five-Facet Mindfulness"
 )
 
 scale.FFMQ.synonyms <- c(
   "Five Factor Mindfulness Questionnaire (FFMQ) [60].",  # mistake in paper --> Factor = Facet
   "Five Facet Mindfulness Questionnaire (FFMQ; Baer, Smith, Hopkins, Krietemeyer, & Toney, 2006)",
   "Five Facet Mindfulness Questionnaire [FFMQ]; Baer et al. 2006",
-  "Five Facet Mindfulness Questionnaire (FFMQ)", "Mindfulness Questionnaire (FFMQ; Baer et al. 2006 2008)", "Five Facets Mindfulness Questionnaire (FFMQ; Baer et al. 2006)"
+  "Five Facet Mindfulness Questionnaire (FFMQ)", "Mindfulness Questionnaire (FFMQ; Baer et al. 2006 2008)",
+  "Five Facets Mindfulness Questionnaire (FFMQ; Baer et al. 2006)",
+  " Five-Facet Mindfulness \nQuestionnaire (Michalak et al. 2016)"
 )
 
 scale.FMI.14.synonyms <- c(
@@ -3862,7 +3886,12 @@ outcome.direction.df <- outcome.direction.df |>
       High.or.low.means.resilient,
       Outcome %in% c("Cognitive control", "Self-compassion", "Positive emotion", "Positive affect"),
       "^"
-    )
+    ),
+    High.or.low.means.resilient = replace(
+      High.or.low.means.resilient,
+      Outcome %in% c("Anxiety"),
+      "v"
+    ),
   )
 outcome.direction.df
 
@@ -6065,13 +6094,16 @@ meta.analyze <- function(
     if (moderator == "follow.up.period"){
       regression.df.list <- list()
       for (t in 1:3){
-        regression.df <- meta.df.list[[t]] %>%
-          filter(!(
-            is.na(!!sym(moderator)) |
-            !!sym(moderator) %in% c("NA", nm.placeholder, as.character(nm.placeholder))
-          ))
-          # filters out rows in which the moderator's column is NA
-        
+        if (nrow(meta.df.list[[t]]) < 1){
+          regression.df <- meta.df.list[[t]]
+        } else {
+          regression.df <- meta.df.list[[t]] %>%
+            filter(!(
+              is.na(!!sym(moderator)) |
+              !!sym(moderator) %in% c("NA", nm.placeholder, as.character(nm.placeholder))
+            ))
+            # filters out rows in which the moderator's column is NA
+        }
         regression.df.list <- append(
           regression.df.list,
           list(regression.df)
@@ -8872,15 +8904,6 @@ length(programs.durations.vec[!is.na.or.nm(programs.durations.vec)])
 # %% [markdown] heading_collapsed=true hidden=true
 # ###### Outcome numbers
 
-# %% vscode={"languageId": "r"}
-study_test
-
-# %% vscode={"languageId": "r"}
-outcome.no_test
-
-# %% vscode={"languageId": "r"}
-m.data.list[["outcome.names.df"]] %>% slice(87)
-
 # %% hidden=true vscode={"languageId": "r"}
 outcomes.no.ordered.freq.df <- outcomes.no.df[order(-outcomes.no.df$Freq),]
 colnames(outcomes.no.ordered.freq.df) <- c("Outcome", "Frequency")
@@ -9074,7 +9097,7 @@ for (outcome in present.outcomes.sorted){
   # get data without outliers
   outliers <- outlier.list[[outcome]]
   results.meta.wo.o <-  print.meta.results(
-    outcome, preferred.scale = preferred.scale,
+    outcome, preferred.scale = get.1st.preferred.scale(outcome),
     regression = F, print.forest = F, print.funnel = F, print.influence = F, print.baujat = F, split.subgroups = F, print.forest.sub.single = F, print.meta.results = F,
     return.data = "results.meta", filter.forest..funnel.vec = if(length(outliers) != 0){-outliers}else{FALSE}
   )
@@ -9086,7 +9109,7 @@ for (outcome in present.outcomes.sorted){
   
   # get data with outliers included
   results.meta.w.o <-  print.meta.results(
-    outcome, preferred.scale = preferred.scale,
+    outcome, preferred.scale = get.1st.preferred.scale(outcome),
     regression = F, print.forest = F, print.funnel = F, print.influence = F, print.baujat = F, split.subgroups = F, print.forest.sub.single = F, print.meta.results = F,
     return.data = "results.meta"
   )
@@ -10541,36 +10564,6 @@ total_sub_summary_df <- total_sub_summary_df |>
   )
 
 total_sub_summary_df
-
-# %% vscode={"languageId": "r"}
-print.meta.results(
-  "Self-esteem", preferred.scale = get.1st.preferred.scale("Self-esteem"),
-  basic = F, moderator.vec = c("programs.duration"), print.regplot = F, print.baujat.regression = F,
-  print.influence = F, print.regression.results = F, regression.degree.1 = T, regression.degree.2 = F,
-  regression.label = T, return.data = "regression.results.linear"  # ,
-  # filter.regression.linear.list = if(length(outlier.list[[paste("programs.duration", ".lin", sep = "")]][["Stress"]]) == 0){FALSE}else{list(-outlier.list[[paste("programs.duration", ".lin", sep = "")]][["Stress"]])}
-)
-
-# %% vscode={"languageId": "r"}
-test <- print.meta.results(
-  "Stress", preferred.scale = get.1st.preferred.scale("Stress"),
-  regression = F, print.forest = F, print.funnel = F, print.influence = F, print.baujat = F,
-  split.subgroups = T, print.forest.sub.single = "meditation.type", print.meta.results = F,
-  return.data = "results.meta" # ,
-  # filter.forest..funnel.vec = - outlier.list[["Stress"]]
-)
-
-# %% vscode={"languageId": "r"}
-test
-
-# %% vscode={"languageId": "r"}
-test$TE.random.w
-
-# %% vscode={"languageId": "r"}
-test
-
-# %% vscode={"languageId": "r"}
-test[]
 
 # %% [markdown] heading_collapsed=true
 # ## Robustness Tables
@@ -14085,57 +14078,57 @@ return.outcome.output <- function(output, outcome.vec, preferred.scale = FALSE){
 # ## Save all Gosh Plots as .png (making dashboard faster)
 
 # %% hidden=true vscode={"languageId": "r"}
-plot.group.list <- list(
-  main.effects = outlier.list,
-  regressions.single = list(
-    list(
-      # only outcomes for that a regression gets calculated
-      # per outcome...
-      programs.duration = c(),
-      sessions.duration = c(),
-      programs.frequency = c(),
-      follow.up.period = c()
-    )
-  )
-)
+# plot.group.list <- list(
+#   main.effects = outlier.list,
+#   regressions.single = list(
+#     list(
+#       # only outcomes for that a regression gets calculated
+#       # per outcome...
+#       programs.duration = c(),
+#       sessions.duration = c(),
+#       programs.frequency = c(),
+#       follow.up.period = c()
+#     )
+#   )
+# )
 
-preferred.scale <- "PSS"
-frame.size <- 11
-resolution.png <- 600
+# preferred.scale <- "PSS"
+# frame.size <- 11
+# resolution.png <- 600
 
-for (outcome in present.outcomes){  # index over present.outcomes all outcomes
-  results.metafor <- print.meta.results(
-    outcome, preferred.scale = if(outcome == "Stress"){preferred.scale}else{FALSE}, return.data = "results.metafor",
-    print.forest = F, print.funnel = F, print.meta.results = F, split.subgroups = F, print.influence = F, regression = F, print.baujat = F
-  )
+# for (outcome in present.outcomes){  # index over present.outcomes all outcomes
+#   results.metafor <- print.meta.results(
+#     outcome, preferred.scale = if(outcome == "Stress"){preferred.scale}else{FALSE}, return.data = "results.metafor",
+#     print.forest = F, print.funnel = F, print.meta.results = F, split.subgroups = F, print.influence = F, regression = F, print.baujat = F
+#   )
   
-  if (is.null(results.metafor)) {
-    next  # skip to the next iteration if results.metafor is NULL as there are no studies for this outcome
-  }
+#   if (is.null(results.metafor)) {
+#     next  # skip to the next iteration if results.metafor is NULL as there are no studies for this outcome
+#   }
 
-  for (plot.group.name in names(plot.group.list)){ # index over names(plot.group.list) instead of "main.effects" to get also the regression gosh plots
-    i <- 1
-    for (outlier in plot.group.list[[plot.group.name]][[outcome]]){  # index over plot.group.name insead of "main.effects" to get also the regression gosh plots
-      png(
-        file.path(
-          "Gosh Plots",
-          paste0(
-            "Gosh.Plot.",
-            outcome,
-            if(outcome == "Stress"){paste0(".", preferred.scale)}else{""},
-            ".outlier.", i, ".png"
-          )
-        ),
-        width=frame.size, height=frame.size, units="in", res=resolution.png
-      )
-      par(mar=c(frame.size,frame.size,1,1))
-      sav <- gosh(results.metafor)
-      plot(sav, out = outlier)
-      dev.off()
-      i <- i + 1
-    }
-  }
-}
+#   for (plot.group.name in names(plot.group.list)){ # index over names(plot.group.list) instead of "main.effects" to get also the regression gosh plots
+#     i <- 1
+#     for (outlier in plot.group.list[[plot.group.name]][[outcome]]){  # index over plot.group.name insead of "main.effects" to get also the regression gosh plots
+#       png(
+#         file.path(
+#           "Gosh Plots",
+#           paste0(
+#             "Gosh.Plot.",
+#             outcome,
+#             if(outcome == "Stress"){paste0(".", preferred.scale)}else{""},
+#             ".outlier.", i, ".png"
+#           )
+#         ),
+#         width=frame.size, height=frame.size, units="in", res=resolution.png
+#       )
+#       par(mar=c(frame.size,frame.size,1,1))
+#       sav <- gosh(results.metafor)
+#       plot(sav, out = outlier)
+#       dev.off()
+#       i <- i + 1
+#     }
+#   }
+# }
 
 # %% [markdown]
 # ## Dashboard
@@ -14370,6 +14363,9 @@ server <- function(input, output, session) {
 }
 
 shinyApp(ui, server)
+
+# %% vscode={"languageId": "r"}
+test %>% head
 
 # %% vscode={"languageId": "r"}
 options(repr.plot.width = 25, repr.plot.height = 9, repr.plot.res = 350)
