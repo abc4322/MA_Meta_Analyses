@@ -16,12 +16,10 @@
 
 # %% [markdown] vscode={"languageId": "r"}
 # ToDos:
-# - [] Assign meditation techniques to categories (e.g., focused attention, open monitoring, loving-kindness, body scan, etc.)
+# - [x] Assign meditation techniques to categories (e.g., focused attention, open monitoring, loving-kindness, body scan, etc.)
 # - [] Assign Scales to outcomes
 # - [x] Implement additional outcomes and interventions from theresa
-# - Check if 5th and 6th intervention are added correctly
 # - [] Define outliers
-# - [] Cluster interventions
 # - [] look for additional manual tasks
 # - [] Check if addition of 6th intervention affects the med.vec.list variable
 
@@ -30,9 +28,10 @@
 #
 
 # %% vscode={"languageId": "r"}
-raw.df <- read.csv("2025_12_19_Data Extraction.csv")
+raw.df <- read.csv("2025_12_27_Data Extraction.csv")
 
-
+# %% vscode={"languageId": "r"}
+options(repr.matrix.max.rows=5, repr.matrix.max.cols=5)
 
 # %% vscode={"languageId": "r"}
 # install.packages("sjmisc")
@@ -916,22 +915,23 @@ results.descriptive.array <- clean.and.shape.data.to.array(
     my.df, start, end, dims, dimname.list, nm.placeholder, study.no
 )
 
-# add 5th intervention to array that was not expected to be present but was in one study
-## create empty array with with one more level at the first dimension (interventions)
-temp.array <- array(NA, dim=c(5, 3, 4, 7, 2, study.no))
+# add 5th and 6th intervention to array that was not expected to be present but was in one study
+## create empty array with with two more levels at the first dimension (interventions)
+temp.array <- array(NA, dim=c(6, 3, 4, 7, 2, study.no))
 
 ## insert the previous array
-temp.array[-5,,,,,] <- results.descriptive.array
+temp.array[1:4,,,,,] <- results.descriptive.array
 results.descriptive.array <- temp.array
 
 ## add dimnames to new array
-dimname.list <- list(c("Intervention.1", "Intervention.2", "Intervention.3", "Control", "Intervention.5", "Intervention.6"),
-                     c("Mean", "SD", "n"),
-                     c("T0", "T1", "T2", "T3"),
-                     c("Outcome.1", "Outcome.2", "Outcome.3", "Outcome.4", "Outcome.5", "Outcome.6", "Outcome.7"),
-                     c("Scale.1", "Scale.2"),
-                     my.df[,"Study.ID"]
-                     )
+dimname.list <- list(
+  c("Intervention.1", "Intervention.2", "Intervention.3", "Control", "Intervention.5", "Intervention.6"),
+  c("Mean", "SD", "n"),
+  c("T0", "T1", "T2", "T3"),
+  c("Outcome.1", "Outcome.2", "Outcome.3", "Outcome.4", "Outcome.5", "Outcome.6", "Outcome.7"),
+  c("Scale.1", "Scale.2"),
+  my.df[,"Study.ID"]
+)
 dimnames(results.descriptive.array) <- dimname.list
 
 print.array.not.na(results.descriptive.array)
@@ -1646,14 +1646,20 @@ cont.active.cognitive <- c(
   "Other: Distraction task: Attending to 45 statements that were externally oriented and unrelated to the self (e.g.  “Think about the parking lot at a\ncinema” or “Think about and picture the Sydney Harbor Bridge\")",
   "Other: Sham meditation: Deep breathing without mindfulness aspect",
   "Other: Control: Sitting in a room with others (conversations were allowed, doing homework or sleep was not)",
-  "Other: Link-link game: Finding two same symbols in a random-ordered square matrix"
+  "Other: Link-link game: Finding two same symbols in a random-ordered square matrix",
+  "Other: active control (listening to music)",
+  "Other: active control audio recordings",
+  "Other: active control"
 )
 
 cont.act.med.incl.move <- c(
   "Body Scan; Breathing Exercise (no further Info); Other: mindful eating",
   "Other: Loving-kindness coloring",
   "Other: Yoga",
-  "Other: Hatha yoga"
+  "Other: Hatha yoga",
+  "Other: Mindfulness meditation (includes movement)",
+  "Still Sitting or Lying; Other: writing down mind-wandering thoughts every 2 minutes of still sitting",
+  "Still Sitting or Lying; Other: Typing thoughts after each 2 min interval"
 )
 
 cont.active.pmr <- c(
@@ -1698,7 +1704,13 @@ cont.active.walk <- c(
 )
 
 cont.active.comb <- c(
-  "Breathing Exercise (no further Info); Other: Recent memory recall, distant memory recall"
+  "Breathing Exercise (no further Info); Other: Recent memory recall, distant memory recall",
+  "Other: Aromatherapy + mindfulness meditation",
+  "Imagination; Progressive Muscle Relaxation (PMR)"
+)
+
+cont.active.aroma <- c(
+  "Other: Aromatherapy "
 )
 
 control.all <- c(
@@ -1788,7 +1800,10 @@ meditation.type.attentional <- c(
   "Other: Opening-up meditation",
   "Other: Mindfulness: Training for relaxation, Training to stabilize the attention, Training for clarity, Teachings from MBSR (Tonglen teachings, Metta teachings)",
   "Only \"Focused Attention Meditation\" named",
-  "Vipassana"
+  "Vipassana",
+  "Other: focused awareness using breath awareness techniques, further courses without further information",
+  "Other: attention monitoring, focused breathing",
+  "mindfulness meditation"
 )
 
 meditation.type.constructive <- c(
@@ -1809,7 +1824,8 @@ meditation.type.attentional.and.constructive <- c(
   "Other: Meditation recordings regarding stress, anxiety, self-compassion, and gratitude",
   'Breathing Exercise (no further Info); Other: Mindfulness meditation regarding body awareness, focused breathing, stress relief, self-\ncompassion, and gratitude',
   "Body Scan; Breathing Exercise (no further Info); Other: Observation of thoughts without judgment, Emotional identification, Internalization and concentration on positive\nand friendly attitudes to help oneself and others",
-  "Other: Mindfulness, cognitive reappraisal, and savoring exercises"
+  "Other: Mindfulness, cognitive reappraisal, and savoring exercises",
+  "Breathing Exercise (no further Info); Imagination; Mantra Meditation; Loving-Kindness Meditation"
 )
 
 meditation.type.attentional.and.deconstructive <- c(
@@ -1928,7 +1944,7 @@ for (study in 1:study.no){
       } else if (value %in% cont.active.walk){
         intervention.comparisons.df.list[[study]][intervention, "Meditation.Type"] <- "walking"
       } else if (value %in% cont.active.comb){
-        intervention.comparisons.df.list[[study]][intervention, "Meditation.Type"] <- "meditation with memory task"
+        intervention.comparisons.df.list[[study]][intervention, "Meditation.Type"] <- "meditation in combination with other treatments"
       } else if (value == "Other: None"){
         intervention.comparisons.df.list[[study]][intervention, "Meditation.Type"] <- "None"
       } else if (
@@ -1963,7 +1979,7 @@ control.groups <- c(
   "stress management",
   "dog therapy",
   "walking",
-  "meditation with memory task"
+  "meditation in combination with other treatments"
 )
 
 # %% vscode={"languageId": "r"}
@@ -2009,7 +2025,7 @@ for (study in 1:study.no){
       } else if (value %in% cont.active.walk){
         intervention.comparisons.df.list.w.o.mean.r[[study]][intervention, "Meditation.Type"] <- "walking"
       } else if (value %in% cont.active.comb){
-        intervention.comparisons.df.list.w.o.mean.r[[study]][intervention, "Meditation.Type"] <- "meditation with memory task"
+        intervention.comparisons.df.list.w.o.mean.r[[study]][intervention, "Meditation.Type"] <- "meditation in combination with other treatments"
       } else if (value == "Other: None"){
         intervention.comparisons.df.list.w.o.mean.r[[study]][intervention, "Meditation.Type"] <- "None"
       } else if (
@@ -5365,26 +5381,28 @@ meta.analyze <- function(
             # iterate overall intervention vs. control combinations
             for (intervention.no in intervention.no.vec){
               for (control.no in control.no.vec){
+                # Define boolean variables for checking if 1) wanted outcome is present, 2) intervention name is present, and 3) data is complete
+                outcome_name <- m.data.list[["outcome.names.df"]][study, sprintf("Name.of.Outcome.%d", outcome.no)]
+                outcome_name_present <- if (is.na(outcome_name)) {F} else {outcome_name == outcome}
+                intervention_name_present <- !(
+                  is.na(m.data.list[["intervention.comparisons.df.list"]][[study]][intervention.no,"Name"]) |
+                  m.data.list[["intervention.comparisons.df.list"]][[study]][intervention.no,"Name"] == "NA" |
+                  m.data.list[["intervention.comparisons.df.list"]][[study]][intervention.no,"Name"] ==
+                    nm.placeholder |
+                  m.data.list[["intervention.comparisons.df.list"]][[study]][intervention.no,"Name"] ==
+                    as.character(nm.placeholder)
+                )
+                data_complete <- !(
+                  NA %in% results.descriptive.array[intervention.no,,time.point, outcome.no, "Scale.1", study] |
+                  nm.placeholder %in% results.descriptive.array[intervention.no,,time.point, outcome.no, "Scale.1", study] |
+                  NA %in% results.descriptive.array[control.no,,time.point, outcome.no, "Scale.1", study] |
+                  nm.placeholder %in% results.descriptive.array[control.no,,time.point, outcome.no, "Scale.1", study]
+                )
+                # Fill descr..reg.data.list if all conditions are met 
                 if (
-                  # wanted outocme present?
-                  m.data.list[["outcome.names.df"]][study, sprintf("Name.of.Outcome.%d", outcome.no)] ==
-                  outcome &
-                  !(
-                    is.na(m.data.list[["intervention.comparisons.df.list"]][[study]][intervention.no,"Name"]) |
-                    m.data.list[["intervention.comparisons.df.list"]][[study]][intervention.no,"Name"] == "NA" |
-                    m.data.list[["intervention.comparisons.df.list"]][[study]][intervention.no,"Name"] ==
-                      nm.placeholder |
-                    m.data.list[["intervention.comparisons.df.list"]][[study]][intervention.no,"Name"] ==
-                      as.character(nm.placeholder)
-                  ) &
-
-                  # data has to be complete
-                  !(
-                    NA %in% results.descriptive.array[intervention.no,,time.point, outcome.no, "Scale.1", study] |
-                    nm.placeholder %in% results.descriptive.array[intervention.no,,time.point, outcome.no, "Scale.1", study] |
-                    NA %in% results.descriptive.array[control.no,,time.point, outcome.no, "Scale.1", study] |
-                    nm.placeholder %in% results.descriptive.array[control.no,,time.point, outcome.no, "Scale.1", study]
-                  )
+                  outcome_name_present &
+                  intervention_name_present &
+                  data_complete
                 ){
                   descr..reg.data.list <- fill.meta.df(
                     "Scale.1", time.point - 1, intervention.no, control.no, outcome.no, study,
@@ -5466,24 +5484,28 @@ meta.analyze <- function(
               # iterate overall intervention vs. control combinations
               for (intervention.no in intervention.no.vec){
                 for (control.no in control.no.vec){
+                  # Define boolean variables for checking if 1) wanted outcome is present, 2) intervention name is present, and 3) data is complete
+                  outcome_name <- m.data.list[["outcome.names.df"]][study, sprintf("Name.of.Outcome.%d", outcome.no)]
+                  outcome_name_present <- if (is.na(outcome_name)) {F} else {outcome_name == outcome}
+                  intervention_name_present <- !(
+                    is.na(m.data.list[["intervention.comparisons.df.list"]][[study]][intervention.no,"Name"]) |
+                    m.data.list[["intervention.comparisons.df.list"]][[study]][intervention.no,"Name"] == "NA" |
+                    m.data.list[["intervention.comparisons.df.list"]][[study]][intervention.no,"Name"] ==
+                      nm.placeholder |
+                    m.data.list[["intervention.comparisons.df.list"]][[study]][intervention.no,"Name"] ==
+                      as.character(nm.placeholder)
+                  )
+                  data_complete <- !(
+                    NA %in% results.descriptive.array[intervention.no,,time.point, outcome.no, scale, study] |
+                    nm.placeholder %in% results.descriptive.array[intervention.no,,time.point, outcome.no, scale, study] |
+                    NA %in% results.descriptive.array[control.no,,time.point, outcome.no, scale, study] |
+                    nm.placeholder %in% results.descriptive.array[control.no,,time.point, outcome.no, scale, study]
+                  )
+                  # Fill descr..reg.data.list if all conditions are met
                   if (
-                    # wanted outcome present?
-                    m.data.list[["outcome.names.df"]][study, sprintf("Name.of.Outcome.%d", outcome.no)] == outcome &
-                    !(
-                      is.na(m.data.list[["intervention.comparisons.df.list"]][[study]][intervention.no,"Name"]) |
-                      m.data.list[["intervention.comparisons.df.list"]][[study]][intervention.no,"Name"] == "NA" |
-                      m.data.list[["intervention.comparisons.df.list"]][[study]][intervention.no,"Name"] == nm.placeholder |
-                      m.data.list[["intervention.comparisons.df.list"]][[study]][intervention.no,"Name"] ==
-                        as.character(nm.placeholder)
-                    ) &
-
-                    # data has to be complete (n.int, mean.int, sd.int, n.con, mean.con, sd.con) 
-                    !(
-                      NA %in% results.descriptive.array[intervention.no,,time.point, outcome.no, scale, study] |
-                      nm.placeholder %in% results.descriptive.array[intervention.no,,time.point, outcome.no, scale, study] |
-                      NA %in% results.descriptive.array[control.no,,time.point, outcome.no, scale, study] |
-                      nm.placeholder %in% results.descriptive.array[control.no,,time.point, outcome.no, scale, study]
-                    )
+                    outcome_name_present &
+                    intervention_name_present &
+                    data_complete
                   ){
                     descr..reg.data.list <- fill.meta.df(
                       scale, time.point - 1, intervention.no, control.no, outcome.no, study,
@@ -5548,7 +5570,15 @@ meta.analyze <- function(
           delivery.mode = delivery.mode,
           follow.up.period = follow.up.period,
           meditation.type = meditation.type,
-          meditation.total = sessions.duration * sessions.frequency * (programs.duration / 7),
+          meditation.total = if (
+            c(sessions.duration, sessions.frequency, programs.duration) %>%
+              sapply(is.numeric) %>%
+              all()
+          ) {
+            sessions.duration * sessions.frequency * (programs.duration / 7)
+          } else {
+            NA_real_
+          },
           female.percent = female.percent
         ))
       )
@@ -5597,7 +5627,7 @@ meta.analyze <- function(
     meta.df.list <- meta.df.list.unfiltered
   }
   
-  if (nrow(meta.df.list[[1]]) >= 1){
+  if (nrow(meta.df.list[[1]]) >= 1) {
     
 # get results for forest plot {meta}
     results.meta <- metacont(
@@ -6121,7 +6151,12 @@ meta.analyze <- function(
     } else if (return.data == "results.meta" & print.forest.sub.single != F){
       # results.meta for print.forest.sub.single != T are returned above
     } else if (return.data == "results.metafor"){
-      return(get.results.metafor(meta.df.list[[1]], results.metafor.fixed = results.metafor.fixed))
+      if (nrow(meta.df.list[[1]]) >= 1){
+        results.metafor <- get.results.metafor(meta.df.list[[1]], results.metafor.fixed = results.metafor.fixed)
+      } else {
+        results.metafor <- NULL
+      }
+      return(results.metafor)
     } else if (return.data == "hedges.g"){
       return(meta.df.list[[1]][, "hedges.g"])
     } else if (return.data == "influence.df"){
@@ -8040,12 +8075,12 @@ med.tech.info <- c()
 
 for (study in 1:study.no){
 
-  med.vec.list <- list(c(), c(), c())
+  med.vec.list <- list(c(), c(), c(), c(), c(), c())
   
-  names(med.vec.list) <- c("int1", "int2", "int3")
+  names(med.vec.list) <- c("int1", "int2", "int3", "int4", "int5", "int6")
   
   int.no <- 1
-  for (int in 1:3){
+  for (int in 1:6){
 
     if (!check.na.med.tech(int, study, nm.placeholder)){
       med.vec.list[[int]] <- append(
@@ -8067,7 +8102,10 @@ for (study in 1:study.no){
   med.tech.info.per.study <- paste(
     med.vec.list[[1]], if(!check.na.med.tech(1, study, nm.placeholder)){"\n\n"}else{""},
     med.vec.list[[2]], if(!check.na.med.tech(2, study, nm.placeholder)){"\n\n"}else{""},
-    med.vec.list[[3]],
+    med.vec.list[[3]], if(!check.na.med.tech(3, study, nm.placeholder)){"\n\n"}else{""},
+    med.vec.list[[4]], if(!check.na.med.tech(4, study, nm.placeholder)){"\n\n"}else{""},
+    med.vec.list[[5]], if(!check.na.med.tech(5, study, nm.placeholder)){"\n\n"}else{""},
+    med.vec.list[[6]], if(!check.na.med.tech(6, study, nm.placeholder)){"\n\n"}else{""},
     sep = ""
   )
   
@@ -8833,6 +8871,15 @@ length(programs.durations.vec[!is.na.or.nm(programs.durations.vec)])
 
 # %% [markdown] heading_collapsed=true hidden=true
 # ###### Outcome numbers
+
+# %% vscode={"languageId": "r"}
+study_test
+
+# %% vscode={"languageId": "r"}
+outcome.no_test
+
+# %% vscode={"languageId": "r"}
+m.data.list[["outcome.names.df"]] %>% slice(87)
 
 # %% hidden=true vscode={"languageId": "r"}
 outcomes.no.ordered.freq.df <- outcomes.no.df[order(-outcomes.no.df$Freq),]
@@ -14062,9 +14109,13 @@ for (outcome in present.outcomes){  # index over present.outcomes all outcomes
     print.forest = F, print.funnel = F, print.meta.results = F, split.subgroups = F, print.influence = F, regression = F, print.baujat = F
   )
   
-  for (plot.group.name in "main.effects"){ # index over names(plot.group) insead of "main.effects" to get also the regression gosh plots
+  if (is.null(results.metafor)) {
+    next  # skip to the next iteration if results.metafor is NULL as there are no studies for this outcome
+  }
+
+  for (plot.group.name in names(plot.group.list)){ # index over names(plot.group.list) instead of "main.effects" to get also the regression gosh plots
     i <- 1
-    for (outlier in plot.group.list[["main.effects"]][[outcome]]){  # index over plot.group.name insead of "main.effects" to get also the regression gosh plots
+    for (outlier in plot.group.list[[plot.group.name]][[outcome]]){  # index over plot.group.name insead of "main.effects" to get also the regression gosh plots
       png(
         file.path(
           "Gosh Plots",
