@@ -19,10 +19,10 @@
 # - [x] Assign meditation techniques to categories (e.g., focused attention, open monitoring, loving-kindness, body scan, etc.)
 # - [x] Assign Scales to outcomes
 # - [x] Implement additional outcomes and interventions from theresa
+# - [] fix update.meta bug
 # - [] Define outliers and influential cases
 # - [] Define studies causing inconsistency
 # - [x] Check if addition of 6th intervention affects the med.vec.list variable
-# - [] fix update.meta bug
 
 # %% [markdown]
 # # Preprocess Data
@@ -32,7 +32,7 @@
 raw.df <- read.csv("2025_12_27_Data Extraction.csv")
 
 # %% vscode={"languageId": "r"}
-options(repr.matrix.max.rows=5, repr.matrix.max.cols=5)
+options(repr.matrix.max.rows=5, repr.matrix.max.cols=5)  # limit output display so notebook does not get overloaded
 
 # %% vscode={"languageId": "r"}
 # install.packages("sjmisc")
@@ -3986,18 +3986,28 @@ meditation.techniques.df["Forsyth 2017",] %in% meditation.type.all
 #   reference.group = "passive control", random = T, return.data = F
 # )
 
-# %% hidden=true vscode={"languageId": "r"}
-# install.packages("esc")
-# install.packages("meta")
-# devtools::install_version("metafor", version = "4.2-0")
-# install.packages("gridExtra")
-# install.packages(c("fpc", "mclust"))
+# %% vscode={"languageId": "r"}
+# Remove the incompatible netmeta package
+remove.packages("netmeta")
 
-# install dmetar from github as it is still in development yet
-# if (!require("devtools")) {
-#   install.packages("devtools")
+# Install an older version of netmeta that's compatible with your meta package
+# Try version 2.0-0 or 1.5-0 which should work with older meta versions
+require(devtools)
+install_version("netmeta", version = "2.0-0", repos = "http://cran.us.r-project.org")
+
+# Alternatively, if that doesn't work, try version 1.5-0
+# install_version("netmeta", version = "1.5-0", repos = "http://cran.us.r-project.org")
+
+# Load the package
+library(netmeta)
+
+# %% hidden=true vscode={"languageId": "r"}
+# install.packages("meta")
+# if (!require("remotes")) {
+#   install.packages("remotes")
 # }
-# devtools::install_github("MathiasHarrer/dmetar")
+# remotes::install_github("MathiasHarrer/dmetar")
+# install.packages(c("netmeta", "metafor", "esc", "gridExtra", "fpc", "mclust"))
 
 library(esc)
 library(metafor)
@@ -9165,7 +9175,7 @@ unique(c(studies.suff.data.pas.vec, studies.suff.data.act.vec))
 # %% vscode={"languageId": "r"}
 # install.packages("gt")  # <-- manipulating table apperance
 # install phantomjs <-- for saving tables as pictures
-# install.packages("webshot")
+# install.packages("webshot2")
 # webshot::install_phantomjs()
 # install.packages("rmarkdown")  # <-- for saving table as docx
 library(webshot2)
@@ -11100,7 +11110,7 @@ res.overall; res.overall.n.o.
 # ## Overall network meta-analysis
 
 # %% hidden=true vscode={"languageId": "r"}
-install.packages("igraph")
+# install.packages("igraph")
 library(igraph)
 
 # %% [markdown] heading_collapsed=true hidden=true
@@ -14363,9 +14373,6 @@ server <- function(input, output, session) {
 }
 
 shinyApp(ui, server)
-
-# %% vscode={"languageId": "r"}
-test %>% head
 
 # %% vscode={"languageId": "r"}
 options(repr.plot.width = 25, repr.plot.height = 9, repr.plot.res = 350)
