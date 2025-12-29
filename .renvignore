@@ -1,0 +1,15 @@
+.git/
+.vscode/
+Archive/
+"Baujat Plots/"
+"Funnel Plots/"
+"Gosh Plots/"
+"Influence Plots/"
+"jupytext_files/"
+"QQ Plots/"
+"Sensitivity Analysis tables/"
+"Sensitivity Analysis tables html/"
+*.md
+*.txt
+*.csv
+*.ipynb
