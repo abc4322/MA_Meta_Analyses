@@ -19,7 +19,7 @@
 # - [x] Assign meditation techniques to categories (e.g., focused attention, open monitoring, loving-kindness, body scan, etc.)
 # - [x] Assign Scales to outcomes
 # - [x] Implement additional outcomes and interventions from theresa
-# - [] fix update.meta bug
+# - [x] fix update.meta bug
 # - [] Define outliers and influential cases
 # - [] Define studies causing inconsistency
 # - [x] Check if addition of 6th intervention affects the med.vec.list variable
@@ -3962,7 +3962,7 @@ meditation.techniques.df["Forsyth 2017",] %in% meditation.type.all
 # set plot size
 # options(repr.plot.width = 12, repr.plot.height = 6, repr.plot.res = 400)
 
-# unversal functions
+# universal functions
 # forest etc.
 # print.meta.results(
 #   "Stress", preferred.scale = "DASS",
@@ -3985,21 +3985,6 @@ meditation.techniques.df["Forsyth 2017",] %in% meditation.type.all
 #   plot.netgraph = F, plot.forest = F, plot.direct.evidence = F, plot.netheat = T,
 #   reference.group = "passive control", random = T, return.data = F
 # )
-
-# %% vscode={"languageId": "r"}
-# Remove the incompatible netmeta package
-remove.packages("netmeta")
-
-# Install an older version of netmeta that's compatible with your meta package
-# Try version 2.0-0 or 1.5-0 which should work with older meta versions
-require(devtools)
-install_version("netmeta", version = "2.0-0", repos = "http://cran.us.r-project.org")
-
-# Alternatively, if that doesn't work, try version 1.5-0
-# install_version("netmeta", version = "1.5-0", repos = "http://cran.us.r-project.org")
-
-# Load the package
-library(netmeta)
 
 # %% hidden=true vscode={"languageId": "r"}
 # install.packages("meta")
@@ -5787,7 +5772,12 @@ meta.analyze <- function(
             n.e = n.int, mean.e = mean.int, sd.e = sd.int,
             n.c = n.control, mean.c = mean.control, sd.c = sd.control,
             common = T, random = T, studlab = study.id,
-            data = meta.df.list[[1]], sm = "SMD"
+            data = meta.df.list[[1]] %>%
+              filter(!(
+                is.na(!!sym(subgroup)) |
+                !!sym(subgroup) %in% c( "NA", nm.placeholder)
+              )),
+            sm = "SMD"
           )
           if (subgroup.method == "fixed"){  # corresponds to Schwarzer et al. (2015). Meta-Analysis with R. doi: 10.1007/978-3-319-21416-0, pp. 41 - 45 & 89 - 91
             results.meta.sub <- update.meta(
