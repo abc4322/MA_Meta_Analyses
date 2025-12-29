@@ -15356,6 +15356,114 @@ cat(req.mess, sep = "____________________________________________\n")
 # data.request.excel <- req.df |> select(Covidence..:What.further.Study.Information.is.needed.)
 # write.xlsx(data.request.excel, "data.request.excel.xlsx")
 
+# %% [markdown]
+# # Save Environment
+
+# %% vscode={"languageId": "r"}
+# --------------------------------------------------------------
+
+#  setup_source_renv.R
+
+#  Purpose: Capture the exact R version and the complete package
+
+#           snapshot of the current project using renv.
+
+# --------------------------------------------------------------
+
+# ---- 1. Install renv if it is not already available -----------------
+
+if (!requireNamespace("renv", quietly = TRUE)) {
+
+  install.packages("renv", repos = "https://cloud.r-project.org")
+
+}
+
+# ---- 2. Initialise renv in the current directory --------------------
+
+#    This creates a private library (renv/library/) and a lockfile
+
+#    (renv.lock) that records:
+
+#      • R version
+
+#      • Exact package versions (CRAN, Bioconductor, GitHub, etc.)
+
+#      • Source URLs / commit hashes
+
+#
+
+#    If a renv project already exists, init() will simply
+
+#    activate it without overwriting anything.
+
+renv::init(bare = FALSE) # bare = FALSE => keep existing packages
+
+# ---- 3. OPTIONAL: Clean the private library (remove unused pkgs) -----
+
+#    This step is useful if you have many packages installed globally
+
+#    but only a subset is required for the notebook.
+
+#    Comment out if you prefer to keep everything.
+
+# renv::clean()
+
+# ---- 4. Snapshot the current state -----------------------------------
+
+#    After init() you usually already have a lockfile, but calling
+
+#    snapshot() ensures it reflects the *exact* versions that are
+
+#    loaded in the session right now.
+
+renv::snapshot(force = TRUE)
+
+# ---- 5. Confirm that the lockfile was created -----------------------
+
+lockfile_path <- file.path(getwd(), "renv.lock")
+
+if (file.exists(lockfile_path)) {
+
+ cat("\n✅ renv.lock created successfully at:", lockfile_path, "\n")
+
+} else {
+
+ stop("\n❌ Failed to create renv.lock – check the console for errors.")
+
+}
+
+# ---- 6. (Optional) Export the private library as a tarball ------------
+
+#    This lets you avoid downloading packages again on the target
+
+#    machine, which can be handy on machines without internet access.
+
+#    The archive will be named `renv_library.tar.gz`.
+
+#
+
+#    Uncomment the lines below if you want to ship the binary cache.
+
+#
+
+tar(
+
+ tarfile = "renv_library.tar.gz",
+
+ files = "renv/library",
+
+ compression = "gzip",
+
+ tar = "internal"
+
+)
+
+# cat("\n📦 Library archived as renv_library.tar.gz (optional).\n")
+
+# %% vscode={"languageId": "r"}
+# Show current R version
+R.Version()$version.string
+
 # %% [markdown] heading_collapsed=true
 # # Old Code
 
