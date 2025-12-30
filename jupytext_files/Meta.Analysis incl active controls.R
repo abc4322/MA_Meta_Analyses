@@ -15,7 +15,7 @@
 # ---
 
 # %% vscode={"languageId": "r"}
-# # Build R environment
+# # Build R environment (use the renv_library.tar.gz file you can download from the URL in download_link_to_renv_library.tar.gz.txt)
 # # --------------------------------------------------------------
 # #  restore_target_renv.R
 # #  Purpose: Recreate the exact R + package environment captured
@@ -7319,8 +7319,17 @@ intervention.comparisons.df.list[[1]]
 # %% code_folding=[93] hidden=true vscode={"languageId": "r"}
 # using random effect models
 # fonts adjusted for plot size  fonts adjusted for plot size options(repr.plot.width = 25, repr.plot.height = 9, repr.plot.res = 350)
-plot.summary.forest <- function(net.res.all = F, with.outliers = T, overall.method = "rma.mv", overall.measure = "net") {
-    # parameter with.outliers is not implemented for the overall results of the network meta-analysis model 
+plot.summary.forest <- function(
+  net.res.all = F,
+  with.outliers = T,
+  overall.method = "rma.mv",
+  overall.measure = "net",
+  outcome_vec = present.outcomes,
+  title = "Summary Forest Plot",
+  no.participants.df.n.total.imputed_ = no.participants.df.n.total.imputed,
+  study.names.suff.data_ = study.names.suff.data
+) {
+  # parameter with.outliers is not implemented for the overall results of the network meta-analysis model 
   # get total effect sizes and confidence intervals of all outcomes
   outcomes <- c()
   k <- c()
@@ -7336,17 +7345,12 @@ plot.summary.forest <- function(net.res.all = F, with.outliers = T, overall.meth
   mean.control <- c()
   seTE.random <- c()
   
-  present.outcomes.ordered.te <- present.outcomes
+  present.outcomes.ordered.te <- outcome_vec
   
   for (outcome in present.outcomes.ordered.te){
-    if (outcome == "Stress"){
-      preferred.scale <- "DASS"
-    } else {
-      preferred.scale <- FALSE
-    }
     results.meta <- meta.analyze(
       outcome = outcome, meditation.types = meditation.type.all, m.data.list = m.data.list,
-      return.data = "results.meta", preferred.scale = preferred.scale, split.subgroups = FALSE,
+      return.data = "results.meta", preferred.scale = get.1st.preferred.scale(outcome), split.subgroups = FALSE,
       filter.forest..funnel.vec = if(length(outlier.list[[outcome]]) > 0 & !with.outliers){-outlier.list[[outcome]]}else{FALSE}
     )
     if (results.meta$k > 0){
@@ -7393,6 +7397,23 @@ plot.summary.forest <- function(net.res.all = F, with.outliers = T, overall.meth
   if (overall.measure == "net"){
     
     overall.name <- "Overall (network meta-analysis model)"
+
+    # Get study names of studies including the outcomes
+    study.names.of.outcomes <- outcome.names.df %>%
+      filter(if_any(everything(), ~ . %in% outcome_vec)) %>%
+      row.names()
+
+    # Define number of participants
+    n_participants_overall <- no.participants.df.n.total.imputed_ %>%
+      # Select only columns of studies with sufficient data
+      select(all_of(study.names.suff.data_)) %>%
+      # Select only rows of studies including the outcomes
+      select(any_of(study.names.of.outcomes)) %>%
+      # Filter for sum row
+      filter(row.names(.) == "Sum") %>% 
+      sum()
+
+    # sum(no.participants.df.n.total.imputed_["Sum", study.names.suff.data])
     
     if (is.logical(net.res.all)){
       print("error in plot.summary.forest(): set net.res.all to netmeta results object of network meta-analysis while overall.measure = 'net'")
@@ -7403,7 +7424,7 @@ plot.summary.forest <- function(net.res.all = F, with.outliers = T, overall.meth
       k = c(sum(net.res.all$k)),
       o.i = c(NA),
       o.c = c(NA),
-      o = c(sum(no.participants.df.n.total.imputed["Sum", study.names.suff.data])),
+      o = c(n_participants_overall),
       te = c(net.res.all$TE.random["meditation (exclusive)", "passive control"]),
       ci.l = c(net.res.all$lower.random["meditation (exclusive)", "passive control"]),
       ci.u = c(net.res.all$upper.random["meditation (exclusive)", "passive control"]),
@@ -7453,8 +7474,23 @@ plot.summary.forest <- function(net.res.all = F, with.outliers = T, overall.meth
     } else {
       print("error in plot.summary.forest(): set overall.method to 'rma.mv' or 'metamean'")
     }
+  # Don't add an overall measure if overall.measure is set to 'none'
+  } else if (tolower(overall.measure) == "none") {
+    df.overall <- data.frame(
+      outcomes = character(),
+      k = numeric(),
+      o.i = numeric(),
+      o.c = numeric(),
+      o = numeric(),
+      te = numeric(),
+      ci.l = numeric(),
+      ci.u = numeric(),
+      I2 = numeric(),
+      pow = numeric(),
+      seTE.random = numeric()
+    )
   } else {
-    print("error in plot.summary.forest(): set overall.measure to 'net' or 'pairwise'")
+    print("error in plot.summary.forest(): set overall.measure to 'net', 'pairwise', or 'none'")
   }
 
   df.sum <- rbind(
@@ -7469,7 +7505,9 @@ plot.summary.forest <- function(net.res.all = F, with.outliers = T, overall.meth
   
   # addd column of te that does not get rounded (for correct order in plot/table later)
   df.sum$te.prec <- df.sum$te
-  df.sum[df.sum$outcomes == overall.name, "te.prec"] <- -100  # to set it at the bottom line
+  if (tolower(overall.measure) != "none") {
+    df.sum[df.sum$outcomes == overall.name, "te.prec"] <- -100  # to set it at the bottom line
+  }
   # roud values
   df.sum[,c("o", "te", "ci.l", "ci.u", "I2", "I2.trans", "pow")] <- round(df.sum[,c("o", "te", "ci.l", "ci.u", "I2", "I2.trans", "pow")], 2)
   df.sum[,c("I2", "I2.trans")] <- round(df.sum[,c("I2", "I2.trans")], 0)
@@ -7489,13 +7527,13 @@ plot.summary.forest <- function(net.res.all = F, with.outliers = T, overall.meth
     sep = ""
   )
   
-  if (!is.logical(net.res.all)){
+  if (!is.logical(net.res.all) && tolower(overall.measure) != "none") {
     df.sum[df.sum$outcomes == overall.name, "o.k"] <- paste(
       as.character(df.sum[df.sum$outcomes == overall.name, "o"]), " (",
       as.character(net.res.all$m), ")",
       sep = ""
     )
-  } else {
+  } else if (tolower(overall.measure) != "none") {
     df.sum[df.sum$outcomes == overall.name, "o.k"] <- as.character(df.sum[df.sum$outcomes == overall.name, "o"])
   }
   
@@ -7509,7 +7547,7 @@ plot.summary.forest <- function(net.res.all = F, with.outliers = T, overall.meth
   
   
   # set color range for coloring heterogeneity
-  fun_color_range <- colorRampPalette(c("chartreuse4", "gold", "red"))  # Create color generating function
+  fun_color_range <- colorRampPalette(c("chartreuse4", "gold", "red", "darkred"))  # Create color generating function
   my_colors <- fun_color_range(20)
     
   
@@ -7526,7 +7564,10 @@ plot.summary.forest <- function(net.res.all = F, with.outliers = T, overall.meth
     ) +
     coord_flip() +
     guides(colour = guide_legend(override.aes = list(size=1)), reverse=TRUE) +
-    scale_colour_gradientn(colors = my_colors, name=expression(paste("I"^{2}*" [%]"))) + 
+    scale_colour_gradientn(
+      colors = my_colors, name=expression(paste("I"^{2}*" [%]")),
+      limits = c(0,100), breaks = c(0, 25, 50, 75, 100)
+    ) + 
     scale_size_continuous(
       name = "Data Points", range = c(0.5, 3),
       breaks = c(
@@ -7555,7 +7596,7 @@ plot.summary.forest <- function(net.res.all = F, with.outliers = T, overall.meth
   font.size <- 7
   
   # Set I2 to "NA" where not applicable
-  if (overall.measure != "net"){
+  if (overall.measure != "net" && tolower(overall.measure) != "none") {
     df.sum[df.sum$outcomes == overall.name, c("I2", "I2.trans")] <- "NA"
   }
   df.sum[df.sum$k <= 1, c("I2", "I2.trans")] <- "NA"
@@ -7578,11 +7619,13 @@ plot.summary.forest <- function(net.res.all = F, with.outliers = T, overall.meth
       plot.title=element_text(size=23, face="bold"),
     )
   
-  # combine forest plot and table
-  grid.arrange(
+  # combine forest plot and table with additional title
+  combined_plot <- grid.arrange(
     data_table, p, ncol = 2,
-    widths = c(4/7, 3/7)
+    widths = c(4/7, 3/7),
+    top = textGrob(title, gp = gpar(fontsize = 30, fontface = "bold"))
   )
+  combined_plot
 }
 
 # %% [markdown] heading_collapsed=true hidden=true
@@ -8514,9 +8557,12 @@ get.part.desc.by.stud(study.names)
 # %% hidden=true vscode={"languageId": "r"}
 n.mean.total <- mean(unlist(no.participants.df["Sum", ]), na.rm = T)
 no.participants.df.n.total.imputed <- no.participants.df
-no.participants.df.n.total.imputed["Sum", which(is.na.or.nm(no.participants.df["Sum",]))] <- n.mean.total
+no.participants.df.n.total.imputed["Sum", which(is.na.or.nm(no.participants.df["Sum",]))] <- n.mean.total %>% round(digits = 0)
 n.total <- sum(no.participants.df.n.total.imputed["Sum", ], na.rm = T)
 n.total
+
+# %% vscode={"languageId": "r"}
+no.participants.df.n.total.imputed
 
 # %% code_folding=[] hidden=true vscode={"languageId": "r"}
 # write.csv(study.char.df, "desc.stat.participants.csv")
@@ -9258,6 +9304,7 @@ outcomes.no.10.plus.passive
 
 # %% hidden=true vscode={"languageId": "r"}
 # network meta-analysis results
+message("Calculating network meta-analysis results for all outcomes...")
 net.res.all <- net.meta.analyze(
   present.outcomes, preferred.scale = F, net.df = F, net.res = F,
   details.chkmultiarm = T, tol.multiarm = 1,
@@ -9265,58 +9312,59 @@ net.res.all <- net.meta.analyze(
   return.data = "net.res", reference.group = "passive control", random = T, silent = T
 )
 
-# # Smaller network models for 5 domains
-# ## Direct Resilience
-# net.res.direct.resilience <- net.meta.analyze(
-#   c("Resilience Scales"), preferred.scale = F, net.df = F, net.res = F,
-#   details.chkmultiarm = T, tol.multiarm = 1,
-#   plot.netgraph = F, plot.forest = F, plot.direct.evidence = F, plot.netheat = F,
-#   return.data = "net.res", reference.group = "passive control", random = T, silent = T
-# )
+# Smaller network models per outcome domain
+## Direct Resilience
+message("... For direct resilience...")
+direct.resilience.outcomes <- c(
+  "Resilience Scale"
+)
+net.res.direct.resilience <- net.meta.analyze(
+  direct.resilience.outcomes, preferred.scale = F, net.df = F, net.res = F,
+  details.chkmultiarm = T, tol.multiarm = 1,
+  plot.netgraph = F, plot.forest = F, plot.direct.evidence = F, plot.netheat = F,
+  return.data = "net.res", reference.group = "passive control", random = T, silent = T
+)
 
-# ## Psychological Ressources
-# psych.ressources.outcomes <- c(
-#   "Hope", "Optimism", "Acceptance", "Active Coping", "Self-Esteem", "Self-Compassion", "Self-Efficacy"
-# )
-# net.res.psych.ressources <- net.meta.analyze(
-#   psych.ressources.outcomes, preferred.scale = F, net.df = F, net.res = F,
-#   details.chkmultiarm = T, tol.multiarm = 1,
-#   plot.netgraph = F, plot.forest = F, plot.direct.evidence = F, plot.netheat = F,
-#   return.data = "net.res", reference.group = "passive control", random = T, silent = T
-# )
+## Mental-health related outcomes
+message("... For mental-health related outcomes...")
+mental.health.outcomes <- c(
+  "Depression", "Anxiety", "Stress", "Well-being"
+)
+net.res.mental.health <- net.meta.analyze(
+  mental.health.outcomes, preferred.scale = F, net.df = F, net.res = F,
+  details.chkmultiarm = T, tol.multiarm = 1,
+  plot.netgraph = F, plot.forest = F, plot.direct.evidence = F, plot.netheat = F,
+  return.data = "net.res", reference.group = "passive control", random = T, silent = T
+)
 
-# ## Psychological Distress
-# psych.distress.outcomes <- c(
-#   "Depression", "Anxiety", "Stress"
-# )
-# net.res.psych.distress <- net.meta.analyze(
-#   psych.distress.outcomes, preferred.scale = F, net.df = F, net.res = F,
-#   details.chkmultiarm = T, tol.multiarm = 1,
-#   plot.netgraph = F, plot.forest = F, plot.direct.evidence = F, plot.netheat = F,
-#   return.data = "net.res", reference.group = "passive control", random = T, silent = T
-# )
+## Secondary Factors
+message("... For secondary outcomes...")
+net.res.secondary.outcomes <- net.meta.analyze(
+  present.outcomes.secondary, preferred.scale = F, net.df = F, net.res = F,
+  details.chkmultiarm = T, tol.multiarm = 1,
+  plot.netgraph = F, plot.forest = F, plot.direct.evidence = F, plot.netheat = F,
+  return.data = "net.res", reference.group = "passive control", random = T, silent = T
+)
 
-# ## Well-Being/positive Functioning
-# well.being.outcomes <- c(
-#   "Well-Being", "Positive Affect"
-# )
-# net.res.well.being <- net.meta.analyze(
-#   well.being.outcomes, preferred.scale = F, net.df = F, net.res = F,
-#   details.chkmultiarm = T, tol.multiarm = 1,
-#   plot.netgraph = F, plot.forest = F, plot.direct.evidence = F, plot.netheat = F,
-#   return.data = "net.res", reference.group = "passive control", random = T, silent = T
-# )
-
-# ## Mindfulness
-# mindfulness.outcomes <- c(
-#   "Mindfulness"
-# )
-# net.res.mindfulness <- net.meta.analyze(
-#   mindfulness.outcomes, preferred.scale = F, net.df = F, net.res = F,
-#   details.chkmultiarm = T, tol.multiarm = 1,
-#   plot.netgraph = F, plot.forest = F, plot.direct.evidence = F, plot.netheat = F,
-#   return.data = "net.res", reference.group = "passive control", random = T, silent = T
-# )
+# Define list containing all network meta-analysis results
+net.res.list <- list(
+  net.res.all = list(
+    res.object = net.res.all,
+    included.outcomes = present.outcomes
+  ),
+  net.res.direct.resilience = list(
+    res.object = net.res.direct.resilience,
+    included.outcomes = direct.resilience.outcomes
+  ),
+  net.res.mental.health = list(
+    res.object = net.res.mental.health,
+    included.outcomes = mental.health.outcomes
+  ),
+  net.res.secondary.outcomes = list(
+    res.object = net.res.secondary.outcomes,
+    included.outcomes = present.outcomes.secondary
+  )
+)
 
 # studies delivering sufficient data for meta-analysis
 study.names.suff.data <- sort(unique(gsub("\\ #.*","", net.res.all$studlab)))
@@ -9324,6 +9372,48 @@ study.names.suff.data <- sort(unique(gsub("\\ #.*","", net.res.all$studlab)))
 # inconsistent multi-arm studies with levels of tolerance .001 and .01
 inc.mult.arm.stud.001 <- c("Flett 2019a", "Messer 2016", "Spruin 2021", "Tloczynski 1994", "Waechter 2021", "Wang 2021", "Weytens 2014")
 inc.mult.arm.stud.01 <- c("Messer 2016", "Spruin 2021", "Waechter 2021")
+
+# Investigate if all outcomes are spelled correctly
+outcomes.spelled.correctly.per.domain <- sapply(
+  net.res.list,
+  function(domain) domain$included.outcomes %in% present.outcomes
+)
+outcomes.spelled.correctly.per.domain.all <- sapply(
+  net.res.list,
+  function(domain) all(domain$included.outcomes %in% present.outcomes)
+)
+outcomes.spelled.correctly.all <- sapply(
+  net.res.list,
+  function(domain) all(domain$included.outcomes %in% present.outcomes)
+) %>% all()
+
+if (!outcomes.spelled.correctly.all) {
+  misspelled_outcomes <- lapply(names(net.res.list), function(name) {
+    domain <- net.res.list[[name]]
+    incorrect <- domain$included.outcomes[!domain$included.outcomes %in% present.outcomes]
+    if (length(incorrect) > 0) {
+      paste0("  - ", name, ": ", paste(incorrect, collapse = ", "))
+    }
+  })
+  misspelled_outcomes <- unlist(misspelled_outcomes[!sapply(misspelled_outcomes, is.null)])
+  
+  stop("Not all outcomes in net.res.list are spelled correctly. The following outcomes are misspelled:\n",
+       paste(misspelled_outcomes, collapse = "\n"))
+}
+
+# %% vscode={"languageId": "r"}
+# Missing outcomes
+setdiff(
+  present.outcomes,
+  (
+    sapply(
+      net.res.list[-1],  # exclude overall network
+      function(domain) domain$included.outcomes
+    ) %>%
+    unlist(use.names = F) %>%
+    unique()
+  )
+)
 
 # %% hidden=true vscode={"languageId": "r"}
 # real number of studies included into the network meta-analysis model
@@ -12853,6 +12943,131 @@ set.outcome.page <- function(outcome, preferred.scale = FALSE){
   )
 }
 
+# %% [markdown]
+# ### Create summary pages for the ui
+
+# %% vscode={"languageId": "r"}
+set.summary.page <- function(net.res.object, domain_name, tabName) {
+  tabItem(
+    tabName = tabName,
+    tabsetPanel(
+      type = "tabs",
+      tabPanel(
+        "Summary without outliers",
+        fluidRow(
+          box(
+            title = "Summary Forest Plot",
+            width = 12,
+            class = "well",
+            plotOutput(paste0("forest.summary.", domain_name)),
+            align="center",
+            collapsible = TRUE
+          )
+        )
+      ),
+      tabPanel(
+        "Comparison with/without outliers",
+        fluidRow(
+          box(
+            title = "Summary Forest Plot (with outliers)",
+            width = 12,
+            class = "well",
+            plotOutput(paste0("forest.summary.o..", domain_name)),
+            align="center",
+            collapsible = TRUE
+          )
+        ),
+        fluidRow(
+          box(
+            title = "Summary Forest Plot (without outliers)",
+            width = 12,
+            class = "well",
+            plotOutput(paste0("forest.summary.n.o..", domain_name)),
+            align="center",
+            collapsible = TRUE
+          )
+        )
+      ),
+      tabPanel(
+        "Network Analysis",
+        fluidRow(
+          box(
+            title = "Network Plot",
+            footer = paste(
+              "Studies = ", net.res.object$k, "; Pairwise comparisons = ", net.res.object$m, "; Treatments = ", net.res.object$n, "; Designs = ", net.res.object$d,
+              "; tau2 = ", round(net.res.object$tau2, digit = 4), "; I2 = ", round(net.res.object$I2, digit = 2), " [", round(net.res.object$lower.I2, digit = 2), ", ", round(net.res.object$upper.I2, digit = 2), "]",
+              "; Total Q = ", round(net.res.object$Q, digit = 2), "; df = ", round(net.res.object$df.Q, digit = 2), "; paval = ", round(net.res.object$pval.Q, digit = 4),
+              "; Hetero Q = ", round(net.res.object$Q.heterogeneity, digit = 2), "; df = ", round(net.res.object$df.Q.heterogeneity, digit = 2), "; paval = ", round(net.res.object$pval.Q.heterogeneity, digit = 4),
+              "; Incons Q = ", round(net.res.object$Q.inconsistency, digit = 2), "; df = ", round(net.res.object$df.Q.inconsistency, digit = 2), "; paval = ", round(net.res.object$pval.Q.inconsistency, digit = 4),
+              sep = ""
+            ),
+            width = 6,
+            class = "well",
+            plotOutput(paste0("network.all.", domain_name)),
+            align="center",
+            collapsible = TRUE
+          ),
+          box(
+            title = "Network Forest Plot",
+            # background = if(funnel.asym.p.egger <= 0.05){sig.0.05.color}else{NULL},
+            # footer = "",
+            width = 6,
+            class = "well",
+            plotOutput(paste0("net.forest.all.", domain_name)),
+            collapsible = TRUE
+          )
+        ),
+
+        fluidRow(
+          box(
+            title = "Direct Evidence Plot",
+            width = 8,
+            class = "well",
+            plotOutput(paste0("net.dir.evidence.all.", domain_name)),
+            align="center",
+            # style = forest.plot.box.height.Stress,
+              # adjust height of grey box around the plot, as the high number of studies hinders shiny to recognize the actual plot size
+            collapsible = TRUE
+          ),
+          box(
+            title = "Netheat Plot",
+            width = 4,
+            plotOutput(paste0("net.heat.all.", domain_name)),
+            class = "well",
+            align = "center",
+            # style = forest.plot.box.height.Stress,
+            collapsible = TRUE
+          )
+        ),
+        fluidRow(
+          box(
+            title = "P-val table",
+            width = 12,
+            class = "well",
+            tableOutput(paste0("net.p.df.all.", domain_name)),
+            align="right",
+            collapsible = TRUE,
+            collapsed = TRUE
+          )
+        )
+      ),
+      tabPanel(
+        "Node Splitting Forest Plot",
+        fluidRow(
+          box(
+            title = "Node Splitting Forest Plot",
+            width = 12,
+            class = "well",
+            plotOutput(paste0("netsplit.summary.", domain_name), height = "1700px"),
+            align="center",
+            collapsible = TRUE
+          )
+        )
+      )
+    )
+  )
+}
+
 # %% [markdown] heading_collapsed=true
 # ### Set outcome outputs for server
 
@@ -13925,9 +14140,7 @@ return.outcome.output <- function(output, outcome.vec, preferred.scale = FALSE){
   return(output)
 }
 
-# %% hidden=true vscode={"languageId": "r"}
-
-# %% hidden=true vscode={"languageId": "r"}
+# %% vscode={"languageId": "r"}
 # # with loop for moderators (error: shows only follow.up period plot for every moderator yet)
 # moderator.vec <- c("programs.duration", "sessions.duration", "sessions.frequency", "follow.up.period")
 
@@ -14174,6 +14387,53 @@ return.outcome.output <- function(output, outcome.vec, preferred.scale = FALSE){
 #   return(output)
 # }
 
+# %% [markdown]
+# ### Set summary domain outputs for server
+
+# %% vscode={"languageId": "r"}
+return.summary.output <- function(output, net.res.object, domain_name, outcome_vec) {
+  # output for summary section (all outcomes included)
+  output[[paste0("forest.summary.", domain_name)]] <- renderPlot(plot.summary.forest(net.res.object, outcome_vec = outcome_vec))
+  output[[paste0("forest.summary.o..", domain_name)]] <- renderPlot(plot.summary.forest(net.res.object, outcome_vec = outcome_vec))
+  output[[paste0("forest.summary.n.o..", domain_name)]] <- renderPlot(plot.summary.forest(net.res.object, outcome_vec = outcome_vec, with.outliers = F))
+  
+  output[[paste0("network.all.", domain_name)]] <- renderPlot({
+    net.meta.analyze(
+      outcome_vec, preferred.scale = F, net.df = F, net.res = net.res.object,
+      plot.netgraph = T, plot.forest = F, plot.direct.evidence = F, plot.netheat = F,
+      return.data = F, reference.group = "passive control", random = T
+    )
+  })
+  output[[paste0("net.forest.all.", domain_name)]] <- renderPlot({
+    net.meta.analyze(
+      outcome_vec, preferred.scale = F, net.df = F, net.res = net.res.object,
+      plot.netgraph = F, plot.forest = T, plot.direct.evidence = F, plot.netheat = F,
+      return.data = F, reference.group = "passive control", random = T
+    )
+  })
+  output[[paste0("net.dir.evidence.all.", domain_name)]] <- renderPlot({
+    net.meta.analyze(
+      outcome_vec, preferred.scale = F, net.df = F, net.res = net.res.object,
+      plot.netgraph = F, plot.forest = F, plot.direct.evidence = T, plot.netheat = F,
+      return.data = F, reference.group = "passive control", random = T
+    )
+  })
+  output[[paste0("net.heat.all.", domain_name)]] <- renderPlot({
+    net.meta.analyze(
+      outcome_vec, preferred.scale = F, net.df = F, net.res = net.res.object,
+      plot.netgraph = F, plot.forest = F, plot.direct.evidence = F, plot.netheat = T,
+      return.data = F, reference.group = "passive control", random = T
+    )
+  })
+  
+  output[[paste0("net.p.df.all.", domain_name)]] <- renderTable(data.frame(net.res.object$pval.random), digits = 4)
+
+  net.res.split <- netsplit(net.res.object)
+  output[[paste0("netsplit.summary.", domain_name)]] <- renderPlot({plot(net.res.split)})
+  
+  return(output)
+}
+
 # %% [markdown] heading_collapsed=true
 # ## Save all Gosh Plots as .png (making dashboard faster)
 
@@ -14240,6 +14500,9 @@ ui <- dashboardPage(
   dashboardSidebar(
     sidebarMenu(
       menuItem("Summary", tabName = "Summary_page", icon = icon("flash", lib = 'glyphicon')),
+      menuItem("Summary_Direct_Resilience", tabName = "Summary_Direct_Resilience_page", icon = icon("flash", lib = 'glyphicon')),
+      menuItem("Summary_Mental_Health", tabName = "Summary_Mental_Health_page", icon = icon("flash", lib = 'glyphicon')),
+      menuItem("Summary_Secondary_Outcomes", tabName = "Summary_Secondary_Outcomes_page", icon = icon("flash", lib = 'glyphicon')),
       menuItem("Resilience_Scale", tabName = "Resilience_Scale_page", icon = icon("line-chart")),
       menuItem("Anxiety", tabName = "Anxiety_page", icon = icon("line-chart")),
       menuItem("Depression", tabName = "Depression_page", icon = icon("line-chart")),
@@ -14264,113 +14527,27 @@ ui <- dashboardPage(
   ),
   dashboardBody(tabItems(
     
-  # Summary Page
-    tabItem(
-      tabName = "Summary_page",
-      tabsetPanel(
-        type = "tabs",
-        tabPanel(
-          "Summary without outliers",
-          fluidRow(
-            box(
-              title = "Summary Forest Plot",
-              width = 12,
-              class = "well",
-              plotOutput("forest.summary"),
-              align="center",
-              collapsible = TRUE
-            )
-          )
-        ),
-        tabPanel(
-          "Comparison with/without outliers",
-          fluidRow(
-            box(
-              title = "Summary Forest Plot (with outliers)",
-              width = 12,
-              class = "well",
-              plotOutput("forest.summary.o."),
-              align="center",
-              collapsible = TRUE
-            )
-          ),
-          fluidRow(
-            box(
-              title = "Summary Forest Plot (without outliers)",
-              width = 12,
-              class = "well",
-              plotOutput("forest.summary.n.o."),
-              align="center",
-              collapsible = TRUE
-            )
-          )
-        ),
-        tabPanel(
-          "Network Analysis",
-          fluidRow(
-            box(
-              title = "Network Plot",
-              footer = paste(
-                "Studies = ", net.res.all$k, "; Pairwise comparisons = ", net.res.all$m, "; Treatments = ", net.res.all$n, "; Designs = ", net.res.all$d,
-                "; tau2 = ", round(net.res.all$tau2, digit = 4), "; I2 = ", round(net.res.all$I2, digit = 2), " [", round(net.res.all$lower.I2, digit = 2), ", ", round(net.res.all$upper.I2, digit = 2), "]",
-                "; Total Q = ", round(net.res.all$Q, digit = 2), "; df = ", round(net.res.all$df.Q, digit = 2), "; paval = ", round(net.res.all$pval.Q, digit = 4),
-                "; Hetero Q = ", round(net.res.all$Q.heterogeneity, digit = 2), "; df = ", round(net.res.all$df.Q.heterogeneity, digit = 2), "; paval = ", round(net.res.all$pval.Q.heterogeneity, digit = 4),
-                "; Incons Q = ", round(net.res.all$Q.inconsistency, digit = 2), "; df = ", round(net.res.all$df.Q.inconsistency, digit = 2), "; paval = ", round(net.res.all$pval.Q.inconsistency, digit = 4),
-                sep = ""
-              ),
-              width = 6,
-              class = "well",
-              plotOutput("network.all"),
-              align="center",
-              collapsible = TRUE
-            ),
-            box(
-              title = "Network Forest Plot",
-              # background = if(funnel.asym.p.egger <= 0.05){sig.0.05.color}else{NULL},
-              # footer = "",
-              width = 6,
-              class = "well",
-              plotOutput("net.forest.all"),
-              collapsible = TRUE
-            )
-          ),
-
-          fluidRow(
-            box(
-              title = "Direct Evidence Plot",
-              width = 8,
-              class = "well",
-              plotOutput("net.dir.evidence.all"),
-              align="center",
-              # style = forest.plot.box.height.Stress,
-                # adjust height of grey box around the plot, as the high number of studies hinders shiny to recognize the actual plot size
-              collapsible = TRUE
-            ),
-            box(
-              title = "Netheat Plot",
-              width = 4,
-              plotOutput("net.heat.all"),
-              class = "well",
-              align = "center",
-              # style = forest.plot.box.height.Stress,
-              collapsible = TRUE
-            )
-          ),
-          fluidRow(
-            box(
-              title = "P-val table",
-              width = 12,
-              class = "well",
-              tableOutput("net.p.df.all"),
-              align="right",
-              collapsible = TRUE,
-              collapsed = TRUE
-            )
-          )
-        )
-      )
+  # Summary Pages
+    set.summary.page(
+      net.res.object = net.res.list$net.res.all$res.object,
+      domain_name = "all",
+      tabName = "Summary_page"
     ),
-    
+    set.summary.page(
+      net.res.object = net.res.list$net.res.direct.resilience$res.object,
+      domain_name = "direct.resilience",
+      tabName = "Summary_Direct_Resilience_page"
+    ),
+    set.summary.page(
+      net.res.object = net.res.list$net.res.mental.health$res.object,
+      domain_name = "mental.health",
+      tabName = "Summary_Mental_Health_page"
+    ),
+    set.summary.page(
+      net.res.object = net.res.list$net.res.secondary.outcomes$res.object,
+      domain_name = "secondary.outcomes",
+      tabName = "Summary_Secondary_Outcomes_page"
+    ),
   # Outcomes' pages
 
     set.outcome.page("Resilience Scale"),
@@ -14403,42 +14580,34 @@ server <- function(input, output, session) {
   session$onSessionEnded(function() {
         stopApp()
   })
+
+  # outputs for summary sections per domain
+  output <- return.summary.output(
+    output,
+    net.res.object = net.res.list$net.res.all$res.object,
+    domain_name = "all",
+    outcome_vec = net.res.list$net.res.all$included.outcomes
+  )
+  output <- return.summary.output(
+    output,
+    net.res.object = net.res.list$net.res.direct.resilience$res.object,
+    domain_name = "direct.resilience",
+    outcome_vec = net.res.list$net.res.direct.resilience$included.outcomes
+  )
+  output <- return.summary.output(
+    output,
+    net.res.object = net.res.list$net.res.mental.health$res.object,
+    domain_name = "mental.health",
+    outcome_vec = net.res.list$net.res.mental.health$included.outcomes
+  )
+  output <- return.summary.output(
+    output,
+    net.res.object = net.res.list$net.res.secondary.outcomes$res.object,
+    domain_name = "secondary.outcomes",
+    outcome_vec = net.res.list$net.res.secondary.outcomes$included.outcomes
+  )
   
-  # output for summary section (all outcomes included)
-  output$forest.summary <- renderPlot(plot.summary.forest(net.res.all))
-  output$forest.summary.o. <- renderPlot(plot.summary.forest(net.res.all))
-  output$forest.summary.n.o. <- renderPlot(plot.summary.forest(net.res.all, with.outliers = F))
-  
-  output$network.all <- renderPlot({
-    net.meta.analyze(
-      present.outcomes, preferred.scale = F, net.df = F, net.res = net.res.all,
-      plot.netgraph = T, plot.forest = F, plot.direct.evidence = F, plot.netheat = F,
-      return.data = F, reference.group = "passive control", random = T
-    )
-  })
-  output$net.forest.all <- renderPlot({
-    net.meta.analyze(
-      present.outcomes, preferred.scale = F, net.df = F, net.res = net.res.all,
-      plot.netgraph = F, plot.forest = T, plot.direct.evidence = F, plot.netheat = F,
-      return.data = F, reference.group = "passive control", random = T
-    )
-  })
-  output$net.dir.evidence.all <- renderPlot({
-    net.meta.analyze(
-      present.outcomes, preferred.scale = F, net.df = F, net.res = net.res.all,
-      plot.netgraph = F, plot.forest = F, plot.direct.evidence = T, plot.netheat = F,
-      return.data = F, reference.group = "passive control", random = T
-    )
-  })
-  output$net.heat.all <- renderPlot({
-    net.meta.analyze(
-      present.outcomes, preferred.scale = F, net.df = F, net.res = net.res.all,
-      plot.netgraph = F, plot.forest = F, plot.direct.evidence = F, plot.netheat = T,
-      return.data = F, reference.group = "passive control", random = T
-    )
-  })
-  
-  output$net.p.df.all <- renderTable(data.frame(net.res.all$pval.random), digits = 4)
+  # output$net.p.df.all <- renderTable(data.frame(net.res.all$pval.random), digits = 4)
   
   # outputs for outcomes
   output <- return.outcome.output(output, "Resilience Scale")
@@ -14466,7 +14635,33 @@ shinyApp(ui, server)
 
 # %% vscode={"languageId": "r"}
 options(repr.plot.width = 25, repr.plot.height = 9, repr.plot.res = 350)
-plot.summary.forest(net.res.all)
+
+plot.summary.forest(
+  overall.measure = "none", outcome_vec = present.outcomes,
+  title = ""
+)
+
+# %% vscode={"languageId": "r"}
+# Plot summary forest plots for once without overall estimate and once for all domains with overall estimate
+options(repr.plot.width = 25, repr.plot.height = 9, repr.plot.res = 350)
+
+plot.summary.forest(
+  overall.measure = "none", outcome_vec = present.outcomes,
+  title = paste("Summary Forest Plot")
+)
+
+for (net.res.name in names(net.res.list)) {
+  net.res.object <- net.res.list[[net.res.name]]$res.object
+  if (is.null(net.res.object) || class(net.res.object) != "netmeta") {
+    message(paste0("Skipping ", net.res.name, " as net.res.object is NULL or not of class 'netmeta' (is likely to have no results)."))
+    next  # skip to the next iteration if net.res.object is NULL
+  }
+  message(paste0("--- Plotting summary forest for ", net.res.name), " -------------------------------------")
+  plot.summary.forest(
+    net.res.object, outcome_vec = net.res.list[[net.res.name]]$included.outcomes,
+    title = paste("Summary Forest Plot for", net.res.name)
+  )
+}
 
 # %% [markdown] heading_collapsed=true
 # # Risk of Bias Assessment
