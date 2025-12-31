@@ -7671,6 +7671,11 @@ net.meta.analyze <- function(
       treat1 = c(),
       treat2 = c()
     )
+
+    # Renomve all follow-up time points from m.data.list
+    # (otherwise time points after the post-test would flow into the model as post-test data)
+    m.data.list.no.T2.T3 <- m.data.list
+    m.data.list.no.T2.T3$results.descriptive.array[,,c("T2", "T3"),,,] <- NA_real_
     
     for (outcome in outcome.vec){
       for (i in 1:length(comparions.all)){
@@ -7689,7 +7694,7 @@ net.meta.analyze <- function(
           }
 
           results.meta <- meta.analyze(
-            outcome, meditation.type.all, m.data.list, preferred.scale = preferred.scale, meta.df.list = F, comparison.list = list(comparions.all[[i]], comparions.all[[j]]),
+            outcome, meditation.type.all, m.data.list.no.T2.T3, preferred.scale = preferred.scale, meta.df.list = F, comparison.list = list(comparions.all[[i]], comparions.all[[j]]),
             split.subgroups = F, return.data = "results.meta", silent = silent, filter.forest..funnel.vec = filter.forest..funnel.vec, comparisons.skip.list = comparisons.skip.list
           )
 
@@ -9315,11 +9320,11 @@ net.res.all <- net.meta.analyze(
 # Smaller network models per outcome domain
 ## Direct Resilience
 message("... For direct resilience...")
-direct.resilience.outcomes <- c(
+resilience.scale.outcomes <- c(
   "Resilience Scale"
 )
-net.res.direct.resilience <- net.meta.analyze(
-  direct.resilience.outcomes, preferred.scale = F, net.df = F, net.res = F,
+net.res.resilience.scale <- net.meta.analyze(
+  resilience.scale.outcomes, preferred.scale = F, net.df = F, net.res = F,
   details.chkmultiarm = T, tol.multiarm = 1,
   plot.netgraph = F, plot.forest = F, plot.direct.evidence = F, plot.netheat = F,
   return.data = "net.res", reference.group = "passive control", random = T, silent = T
@@ -9352,9 +9357,9 @@ net.res.list <- list(
     res.object = net.res.all,
     included.outcomes = present.outcomes
   ),
-  net.res.direct.resilience = list(
-    res.object = net.res.direct.resilience,
-    included.outcomes = direct.resilience.outcomes
+  net.res.resilience.scale = list(
+    res.object = net.res.resilience.scale,
+    included.outcomes = resilience.scale.outcomes
   ),
   net.res.mental.health = list(
     res.object = net.res.mental.health,
@@ -11287,7 +11292,7 @@ forest(get.overall.res.metafor(outlier.list$overall))
 res.overall; res.overall.n.o.
 
 # %% [markdown] heading_collapsed=true
-# ## Overall network meta-analysis
+# ## [All Outcomes] Overall network meta-analysis
 
 # %% hidden=true vscode={"languageId": "r"}
 # install.packages("igraph")
@@ -11909,6 +11914,54 @@ studlabs.net.muli.arm <- unique(studlabs.net.df$studlab[
 ])
 studlabs.net.muli.arm
 length(studlabs.net.muli.arm)
+
+# %% [markdown]
+# ## [Resilience Scales] Overall network meta-analysis
+
+# %% [markdown]
+# ### Investigating inconsistancy
+
+# %% [markdown]
+# ### Investigate duplication of study labels due to multiple outcomes, interventions, or time points with the same treatment comparison
+
+# %% vscode={"languageId": "r"}
+# Get multi-arm split studies and their number
+multi_arm_split_studies <- net.res.resilience.scale$studlab %>%
+  grep("#", ., value = TRUE) %>%
+  str_remove_all(" #.*") %>%
+  unique()
+
+multi_arm_split_studies
+length(multi_arm_split_studies)
+
+# %% vscode={"languageId": "r"}
+results.descriptive.array %>% dimnames()
+
+# %% vscode={"languageId": "r"}
+options(repr.matrix.max.rows=20, repr.matrix.max.cols=20)
+net.res.resilience.scale$data %>% filter(grepl("Flett 2019b", .studlab))
+
+# %% vscode={"languageId": "r"}
+outcome.names.df %>% filter(row.names(.) == "Flett 2019b")
+
+# %% vscode={"languageId": "r"}
+print.array.not.na(results.descriptive.array[,,,"Outcome.4","Scale.1","Flett 2019b"])
+
+# %% [markdown]
+# ## [Mental health-related outcomes] Overall network meta-analysis
+
+# %% [markdown]
+# ### Investigating inconsistancy
+
+# %% vscode={"languageId": "r"}
+# Get multi-arm split studies and their number
+multi_arm_split_studies <- net.res.mental.health$studlab %>%
+  grep("#", ., value = TRUE) %>%
+  str_remove_all(" #.*") %>%
+  unique()
+
+multi_arm_split_studies
+length(multi_arm_split_studies)
 
 # %% [markdown]
 # # Create Shiny Dashboard (of inference statistics)
@@ -12948,6 +13001,22 @@ set.outcome.page <- function(outcome, preferred.scale = FALSE){
 
 # %% vscode={"languageId": "r"}
 set.summary.page <- function(net.res.object, domain_name, tabName) {
+
+  # Check if net.res.object is a netmeta object
+    if (!inherits(net.res.object, "netmeta")) {
+      stop("Error: net.res.object must be a netmeta object")
+    }
+
+  # Define number of included studies
+  included_studies_per_model <- net.res.object$studlab %>%
+    # In case, there is one study with the same treatment comparison occuring multiple times in the model
+    # (e.g., because of multiple outcomes for this treatment comparison), there was added a label such as " #1#"
+    # we remove these labels to count unique studies only
+    str_remove_all(" #\\d+#") %>%
+    unique()
+  n_included_studies_per_model <- length(included_studies_per_model)
+
+  # Return the tabItem with the tabsetPanels and tabPanels
   tabItem(
     tabName = tabName,
     tabsetPanel(
@@ -12994,11 +13063,15 @@ set.summary.page <- function(net.res.object, domain_name, tabName) {
           box(
             title = "Network Plot",
             footer = paste(
-              "Studies = ", net.res.object$k, "; Pairwise comparisons = ", net.res.object$m, "; Treatments = ", net.res.object$n, "; Designs = ", net.res.object$d,
+              "N included unique studies = ", n_included_studies_per_model,
+              "; Inflated study count (mixture of number of outcomes, actual studies, and split multi-arm designs) = ", net.res.object$k,
+              "; Pairwise comparisons = ", net.res.object$m,
+              "; Treatments = ", net.res.object$n, "; Designs = ", net.res.object$d,
               "; tau2 = ", round(net.res.object$tau2, digit = 4), "; I2 = ", round(net.res.object$I2, digit = 2), " [", round(net.res.object$lower.I2, digit = 2), ", ", round(net.res.object$upper.I2, digit = 2), "]",
               "; Total Q = ", round(net.res.object$Q, digit = 2), "; df = ", round(net.res.object$df.Q, digit = 2), "; paval = ", round(net.res.object$pval.Q, digit = 4),
               "; Hetero Q = ", round(net.res.object$Q.heterogeneity, digit = 2), "; df = ", round(net.res.object$df.Q.heterogeneity, digit = 2), "; paval = ", round(net.res.object$pval.Q.heterogeneity, digit = 4),
               "; Incons Q = ", round(net.res.object$Q.inconsistency, digit = 2), "; df = ", round(net.res.object$df.Q.inconsistency, digit = 2), "; paval = ", round(net.res.object$pval.Q.inconsistency, digit = 4),
+              "; \nlist of included studies: \n'", paste(included_studies_per_model, collapse = "', '"), "'",
               sep = ""
             ),
             width = 6,
@@ -14500,7 +14573,7 @@ ui <- dashboardPage(
   dashboardSidebar(
     sidebarMenu(
       menuItem("Summary", tabName = "Summary_page", icon = icon("flash", lib = 'glyphicon')),
-      menuItem("Summary_Direct_Resilience", tabName = "Summary_Direct_Resilience_page", icon = icon("flash", lib = 'glyphicon')),
+      menuItem("Summary_Resilience_Scale", tabName = "Summary_Resilience_Scale_page", icon = icon("flash", lib = 'glyphicon')),
       menuItem("Summary_Mental_Health", tabName = "Summary_Mental_Health_page", icon = icon("flash", lib = 'glyphicon')),
       menuItem("Summary_Secondary_Outcomes", tabName = "Summary_Secondary_Outcomes_page", icon = icon("flash", lib = 'glyphicon')),
       menuItem("Resilience_Scale", tabName = "Resilience_Scale_page", icon = icon("line-chart")),
@@ -14534,9 +14607,9 @@ ui <- dashboardPage(
       tabName = "Summary_page"
     ),
     set.summary.page(
-      net.res.object = net.res.list$net.res.direct.resilience$res.object,
-      domain_name = "direct.resilience",
-      tabName = "Summary_Direct_Resilience_page"
+      net.res.object = net.res.list$net.res.resilience.scale$res.object,
+      domain_name = "resilience.scale",
+      tabName = "Summary_Resilience_Scale_page"
     ),
     set.summary.page(
       net.res.object = net.res.list$net.res.mental.health$res.object,
@@ -14578,7 +14651,7 @@ server <- function(input, output, session) {
   
   # end session by closing the window / tab
   session$onSessionEnded(function() {
-        stopApp()
+    stopApp()
   })
 
   # outputs for summary sections per domain
@@ -14590,9 +14663,9 @@ server <- function(input, output, session) {
   )
   output <- return.summary.output(
     output,
-    net.res.object = net.res.list$net.res.direct.resilience$res.object,
-    domain_name = "direct.resilience",
-    outcome_vec = net.res.list$net.res.direct.resilience$included.outcomes
+    net.res.object = net.res.list$net.res.resilience.scale$res.object,
+    domain_name = "resilience.scale",
+    outcome_vec = net.res.list$net.res.resilience.scale$included.outcomes
   )
   output <- return.summary.output(
     output,
@@ -14634,20 +14707,12 @@ server <- function(input, output, session) {
 shinyApp(ui, server)
 
 # %% vscode={"languageId": "r"}
-options(repr.plot.width = 25, repr.plot.height = 9, repr.plot.res = 350)
-
-plot.summary.forest(
-  overall.measure = "none", outcome_vec = present.outcomes,
-  title = ""
-)
-
-# %% vscode={"languageId": "r"}
 # Plot summary forest plots for once without overall estimate and once for all domains with overall estimate
 options(repr.plot.width = 25, repr.plot.height = 9, repr.plot.res = 350)
 
 plot.summary.forest(
   overall.measure = "none", outcome_vec = present.outcomes,
-  title = paste("Summary Forest Plot")
+  title = ""
 )
 
 for (net.res.name in names(net.res.list)) {
