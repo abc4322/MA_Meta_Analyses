@@ -11925,6 +11925,17 @@ length(studlabs.net.muli.arm)
 # ### Investigate duplication of study labels due to multiple outcomes, interventions, or time points with the same treatment comparison
 
 # %% vscode={"languageId": "r"}
+net.meta.analyze(
+  "Resilience Scale", preferred.scale = F, net.df = F, net.res = F,
+  # filter.forest..funnel.vec = c(
+  #   "Messer 2016", "Spruin 2021", "Waechter 2021"  # studies with multi-arm inconsistancy
+  # ),
+  details.chkmultiarm = T, tol.multiarm = 0.01,
+  plot.netgraph = F, plot.forest = F, plot.direct.evidence = F, plot.netheat = F,
+  return.data = "net.res", reference.group = "passive control", random = T, silent = T
+)
+
+# %% vscode={"languageId": "r"}
 # Get multi-arm split studies and their number
 multi_arm_split_studies <- net.res.resilience.scale$studlab %>%
   grep("#", ., value = TRUE) %>%
@@ -11945,6 +11956,17 @@ net.res.resilience.scale$data %>% filter(grepl("Flett 2019b", .studlab))
 outcome.names.df %>% filter(row.names(.) == "Flett 2019b")
 
 # %% vscode={"languageId": "r"}
+m.data.df.list
+
+# %% vscode={"languageId": "r"}
+options(repr.matrix.max.rows=10, repr.matrix.max.cols=10)
+intervention.comparisons.df.list[["Flett 2019b"]]
+
+# %% vscode={"languageId": "r"}
+# Conclusion: Both Headspace and 10 Minute Mind are classified as "meditation (exclusive)" in the intervention.comparisons.df.list and Evernote as "cognitive control".
+# Therefore, we have the treatment comparison "meditation (exclusive)" vs "cognitive control" twice --> correct multi-arm splitting.
+
+# %% vscode={"languageId": "r"}
 print.array.not.na(results.descriptive.array[,,,"Outcome.4","Scale.1","Flett 2019b"])
 
 # %% [markdown]
@@ -11962,6 +11984,45 @@ multi_arm_split_studies <- net.res.mental.health$studlab %>%
 
 multi_arm_split_studies
 length(multi_arm_split_studies)
+
+# %% [markdown]
+# ### Included outcomes and SMDs of specific comparisons
+
+# %% vscode={"languageId": "r"}
+options(repr.matrix.max.rows=20, repr.matrix.max.cols=15)
+# get table of SMDs
+net.smd.df <- data.frame(matrix(".", nrow = net.res.mental.health$n, ncol = net.res.mental.health$n))
+
+for(i in 1:nrow(net.smd.df)){
+  for(j in 1:ncol(net.smd.df)){
+    if (i < j){
+      next
+    }
+    # Concatenate the contents and assign to the new data frame
+    net.smd.df[i,j] <- paste(
+      as.character(round(net.res.mental.health$TE.random[i,j], 2)), " [",
+      as.character(round(net.res.mental.health$lower.random[i,j], 2)), ", ",
+      as.character(round(net.res.mental.health$upper.random[i,j], 2)), "]",
+      sep = ""
+    )
+  }
+}
+rownames(net.smd.df) <- net.res.mental.health$trts
+colnames(net.smd.df) <- net.res.mental.health$trts
+net.smd.df
+
+# %% vscode={"languageId": "r"}
+options(repr.matrix.max.rows=30, repr.matrix.max.cols=15)
+net.res.mental.health$data %>%
+  group_by(.design) %>%
+  summarise(outcomes_included = n_distinct(outcome)) %>%
+  arrange(desc(outcomes_included)) %>%
+  left_join(
+    net.res.mental.health$data %>%
+      group_by(.design) %>%
+      summarise(studies = n_distinct(studlab)) %>%
+      arrange(desc(studies))
+  )
 
 # %% [markdown]
 # # Create Shiny Dashboard (of inference statistics)
