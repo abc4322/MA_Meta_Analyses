@@ -67,8 +67,8 @@
 # - [x] Assign Scales to outcomes
 # - [x] Implement additional outcomes and interventions from theresa
 # - [x] fix update.meta bug
-# - [] Define outliers and influential cases
-# - [] Define studies causing inconsistency
+# - [x] Define outliers and influential cases
+# - [] Define studies causing inconsistency (split models primary and secondary outcomes)
 # - [x] Check if addition of 6th intervention affects the med.vec.list variable
 
 # %% [markdown]
@@ -3503,18 +3503,22 @@ regression.labels.df
 # %% code_folding=[] hidden=true vscode={"languageId": "r"}
 # set outliers
 # for regression and subgroup analyses cases with k < 10 were not taken into account
+# indices (study numbers) according to position in influence plots
+# see Shiny Dashboard at "Forest & Funnel Plot (comparision with/without outliers)" tab per outcome and
+# "Linear Regressions (comparison with/without outliers; without mean ranges)" tab per regression variable of outcomes
 outlier.list <- list(
   `Resilience Scale` = c(),
-  `Anxiety` = c(12),
-  `Depression` = c(10),
-  Stress = c(17),
+  `Anxiety` = c(14),  # Devillers-Réolon 2022
+  `Depression` = c(1, 2, 11, 12),  # Weytens 2014, Barry 2019, OrtizCastro 2025, Devillers-Réolon 2022
+    # (difference to search update; before it was only Devillers-Réolon 2022)
+  Stress = c(18),  # Devillers-Réolon 2022
   `Well-being or quality of life` = c(),
   Acceptance = c(),
   `Active coping` = c(),
   `Cognitive control` = c(),
   Empathy = c(),
   Hope = c(),
-  `Mindfulness` = c(10, 11),
+  `Mindfulness` = c(10, 11),  # Bonamo 2015 (2 different groups from same study)
   `Optimism or positive attributional style` = c(),
   `Positive emotion` = c(),
   `Religiosity or spirituality or religious coping` = c(),
@@ -3526,9 +3530,9 @@ outlier.list <- list(
 # Program's Duration
   programs.duration.lin = list(
     `Resilience Scale` = c(),
-    `Anxiety` = c(11),
-    `Depression` = c(),  # k < 10
-    Stress = c(1, 8, 16),
+    `Anxiety` = c(12),  # Devillers-Réolon 2022
+    `Depression` = c(),  # k < 10 when excluding outliers
+    Stress = c(1, 8, 16),  # Messer 2016, Waechter 2021, Devillers-Réolon 2022
     `Well-being or quality of life` = c(),
     Acceptance = c(),
     `Active coping` = c(),
@@ -3547,9 +3551,9 @@ outlier.list <- list(
   
   programs.duration.sq = list(
     `Resilience Scale` = c(),
-    `Anxiety` = c(1, 11),
-    `Depression` = c(),  # k < 10
-    Stress = c(1, 8, 16),
+    `Anxiety` = c(1, 11),  # Waechter 2021, Devillers-Réolon 2022
+    `Depression` = c(),  # k < 10 when excluding outliers
+    Stress = c(1, 8, 16),  # Messer 2016, Waechter 2021, Devillers-Réolon 2022
     `Well-being or quality of life` = c(),
     Acceptance = c(),
     `Active coping` = c(),
@@ -3569,9 +3573,11 @@ outlier.list <- list(
 # Sessions' Duration
   sessions.duration.lin = list(
     `Resilience Scale` = c(),
-    `Anxiety` = c(1, 10),
-    `Depression` = c(),  # k < 10
-    Stress = c(6, 12),
+    `Anxiety` = c(9, 12),  # OrtizCastro 2025, Devillers-Réolon 2022
+      # difference in search update; before, it were Waechter 2021 and Devillers-Réolon 2022
+    `Depression` = c(),  # k < 10 when excluding outliers
+    Stress = c(10, 13),  # OrtizCastro 2025, Devillers-Réolon 2022
+      # difference in search update; before, it were Waechter 2021 and Devillers-Réolon 2022
     `Well-being or quality of life` = c(),
     Acceptance = c(),
     `Active coping` = c(),
@@ -3590,9 +3596,11 @@ outlier.list <- list(
   
   sessions.duration.sq = list(
     `Resilience Scale` = c(),
-    `Anxiety` = c(1, 10),
-    `Depression` = c(),  # k < 10
-    Stress = c(6, 12),
+    `Anxiety` = c(9, 12),  # OrtizCastro 2025, Devillers-Réolon 2022
+      # difference in search update; before, it were Waechter 2021 and Devillers-Réolon 2022
+    `Depression` = c(),  # k < 10 when excluding outliers
+    Stress = c(10, 13),  # OrtizCastro 2025, Devillers-Réolon 2022
+      # difference in search update; before, it were Waechter 2021 and Devillers-Réolon 2022
     `Well-being or quality of life` = c(),
     Acceptance = c(),
     `Active coping` = c(),
@@ -3612,9 +3620,13 @@ outlier.list <- list(
 # Sessions' Frequency
   sessions.frequency.lin = list(
     `Resilience Scale` = c(),
-    `Anxiety` = c(2, 10),
+    `Anxiety` = c(),
+      # difference in search update; before it were 2, 10; now, it was decided to not exclude
+      # outliers when the resulting nubmer of studies is < 10
     `Depression` = c(),  # k < 10
-    Stress = c(10, 11, 12),
+    Stress = c(),
+      # difference in search update; before it were 10, 11, 12; now, it was decided to not exclude
+      # outliers when the resulting nubmer of studies is < 10
     `Well-being or quality of life` = c(),
     Acceptance = c(),
     `Active coping` = c(),
@@ -3633,9 +3645,13 @@ outlier.list <- list(
   
   sessions.frequency.sq = list(
     `Resilience Scale` = c(),
-    `Anxiety` = c(1, 2, 10),
+    `Anxiety` = c(),
+      # difference in search update; before it were 1, 2, 10; now, it was decided to not exclude
+      # outliers when the resulting nubmer of studies is < 10
     `Depression` = c(),  # k < 10
-    Stress = c(10, 11, 12),
+    Stress = c(),
+      # difference in search update; before it were 10, 11, 12; now, it was decided to not exclude
+      # outliers when the resulting nubmer of studies is < 10
     `Well-being or quality of life` = c(),
     Acceptance = c(),
     `Active coping` = c(),
@@ -3655,16 +3671,18 @@ outlier.list <- list(
 # Follow-up Period
   follow.up.period.lin = list(
     `Resilience Scale` = c(),
-    `Anxiety` = c(),
+    `Anxiety` = c(14),  # Devillers-Réolon 2022
+      # difference in search update; before, it was no outlier
     `Depression` = c(),
-    Stress = c(16, 20),
+    Stress = c(1, 2, 17, 18, 21),  # Messer 2016, Sloan 2016, Bultas 2021, Devillers-Réolon 2022, Plummer 2018 2
+      # difference in search update; before, it was 16, 18
     `Well-being or quality of life` = c(),
     Acceptance = c(),
     `Active coping` = c(),
     `Cognitive control` = c(),
     Empathy = c(),
     Hope = c(),
-    `Mindfulness` = c(10, 11, 14),
+    `Mindfulness` = c(10, 11, 14),  # Bonamo 2015 1&2, Plummer 2018 2
     `Optimism or positive attributional style` = c(),
     `Positive emotion` = c(),
     `Religiosity or spirituality or religious coping` = c(),
@@ -3676,16 +3694,18 @@ outlier.list <- list(
   
   follow.up.period.sq = list(
     `Resilience Scale` = c(),
-    `Anxiety` = c(),
+    `Anxiety` = c(14),  # Devillers-Réolon 2022
+      # difference in search update; before, it was no outlier
     `Depression` = c(),
-    Stress = c(16, 19, 20),
+    Stress = c(18, 20, 21),  # Messer 2016, Sloan 2016, Bultas 2021, Devillers-Réolon 2022, Plummer 2018 1&2
+      # difference in search update; before, it was 16, 19, 20
     `Well-being or quality of life` = c(),
     Acceptance = c(),
     `Active coping` = c(),
     `Cognitive control` = c(),
     Empathy = c(),
     Hope = c(),
-    `Mindfulness` = c(10, 11, 12, 14),
+    `Mindfulness` = c(10, 11, 12, 14),  # Bonamo 2015 1&2, Plummer 2018 1&2
     `Optimism or positive attributional style` = c(),
     `Positive emotion` = c(),
     `Religiosity or spirituality or religious coping` = c(),
@@ -3697,16 +3717,22 @@ outlier.list <- list(
   
   meditation.type = list(
     `Resilience Scale` = c(),
-    `Anxiety` = c(12),
-    `Depression` = c(2),
-    Stress = c(16, 17),  # "DASS" was used as preferred scale
+    `Anxiety` = c(14),  # Devillers-Réolon 2022
+    `Depression` = c(),
+      # difference in search update; before it were 2; now, it was decided to not exclude
+      # outliers when the resulting nubmer of studies is < 10
+    Stress = c(5, 17, 18),  # Weytens 2014, Bultas 2021, Devillers-Réolon 2022
+       # difference in search update; before it were only Bultas 2021, Devillers-Réolon 2022
+      # "DASS" was used as preferred scale
     `Well-being or quality of life` = c(),
     Acceptance = c(),
     `Active coping` = c(),
     `Cognitive control` = c(),
     Empathy = c(),
     Hope = c(),
-    `Mindfulness` = c(10, 11),
+    `Mindfulness` = c(),
+      # difference in search update; before it were 10, 11; now, it was decided to not exclude
+      # outliers when the resulting nubmer of studies is < 10
     `Optimism or positive attributional style` = c(),
     `Positive emotion` = c(),
     `Religiosity or spirituality or religious coping` = c(),
@@ -3718,16 +3744,20 @@ outlier.list <- list(
   
   delivery.mode = list(
     `Resilience Scale` = c(),
-    `Anxiety` = c(12),
-    `Depression` = c(1, 2, 10),
-    Stress = c(1, 16, 17),
+    `Anxiety` = c(13),  # Devillers-Réolon 2022
+    `Depression` = c(),
+      # difference in search update; before it were 1, 2, 10; now, it was decided to not exclude
+      # outliers when the resulting nubmer of studies is < 10
+    Stress = c(1, 16, 17),  # Messer 2016, Bultas 2021, Devillers-Réolon 2022
     `Well-being or quality of life` = c(),
     Acceptance = c(),
     `Active coping` = c(),
     `Cognitive control` = c(),
     Empathy = c(),
     Hope = c(),
-    `Mindfulness` = c(10, 11),
+    `Mindfulness` = c(),
+      # difference in search update; before it were 10, 11; now, it was decided to not exclude
+      # outliers when the resulting nubmer of studies is < 10
     `Optimism or positive attributional style` = c(),
     `Positive emotion` = c(),
     `Religiosity or spirituality or religious coping` = c(),
@@ -3737,7 +3767,10 @@ outlier.list <- list(
     `Self-esteem` = c()
   ),
   
-  overall = c(1, 4, 5, 7, 65, 67, 68, 69),  # single entries in multivariate 3-level meta-analysis
+  overall = c(1, 4, 5, 7, 8, 70, 72, 73, 74),  # single entries in multivariate 3-level meta-analysis
+    # (based on funnel plot, not outliers visible in influence plot)
+    # difference in search update; before, it were c(1, 4, 5, 7, 65, 67, 68, 69)
+
   
   net.overall = c(
     "Spruin 2021",  # causing inconsistancy in comparisons with dog therapy
@@ -3753,8 +3786,8 @@ outlier.list <- list(
 
 # %% hidden=true vscode={"languageId": "r"}
 # # outlier analysis for categorical moderators "meditation.type" and "delivery.mode" was not implemented into the dashboard but did here instead
-# outcome <- "Stress"
-# preferred.scale <- "DASS"
+# outcome <- "Anxiety"
+# # preferred.scale <- "DASS"
 # # moderator.vec <- c("meditation.type")
 # moderator.vec <- c("delivery.mode")
 
@@ -6919,7 +6952,7 @@ library(shiny)
 conflicts_prefer(shinydashboard::box)
 
 # %% [markdown] heading_collapsed=true
-# ## Calculate data frame lists and results for meta-analyses once for speeding up the repitative loading of the dashboard
+# ## Calculate data frame lists and results for meta-analyses once for speeding up the repetative loading of the dashboard
 
 # %% hidden=true vscode={"languageId": "r"}
 meta.df.lists <- list()
