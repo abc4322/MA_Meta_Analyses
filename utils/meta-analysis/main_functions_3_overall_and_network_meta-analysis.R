@@ -428,7 +428,7 @@ net.meta.analyze <- function(
   outcome.vec = NULL, preferred.scale = F, net.df = F, net.res = F, filter.forest..funnel.vec = F, comparisons.skip.list = F,
   
   # for netmeta()
-  details.chkmultiarm = T, tol.multiarm = 10,  ####### <-- do sensitivity analyis in which studies with higher multi-arm inconsitency than default value in netmeta() are cut out
+  details.chkmultiarm = T, tol.multiarm = 10,
   
   # plots
   plot.netgraph = F, plot.forest = F, plot.direct.evidence = F, plot.netheat = F,

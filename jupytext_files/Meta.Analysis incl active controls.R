@@ -5529,7 +5529,7 @@ source("utils/sensitivity_analysis/get.sens.anal.df.R")
 
 # %% hidden=true vscode={"languageId": "r"}
 # for network meta-analysis of all outcomes in one model
-net.sens.anal.df <- get.sens.anal.df(present.outcomes, "net", save.as = "html", saving.path = r"(C:\Users\anonymous\Documents\GitHub\MA_Meta_Analyses\Sensitivity Analysis tables\)")
+# net.sens.anal.df <- get.sens.anal.df(present.outcomes, "net", save.as = "html", saving.path = r"(C:\Users\anonymous\Documents\GitHub\MA_Meta_Analyses\Sensitivity Analysis tables\)")
 
 # %% [markdown] vscode={"languageId": "r"}
 # ## Summary table for different subgroups
@@ -6803,6 +6803,24 @@ length(studlabs.net.muli.arm)
 # %% [markdown]
 # ### Investigating inconsistancy
 
+# %% vscode={"languageId": "r"}
+options(repr.plot.width = 10, repr.plot.height = 10, repr.plot.res = 200)
+netheat(net.res.resilience.scale, nchar.trts = 3)
+
+# %% [markdown] vscode={"languageId": "r"}
+# --> Net heat plot not applicable because "Insufficient number of designs (available or selected by the program  specification) for a net heat plot."
+
+# %% vscode={"languageId": "r"}
+net.res.resilience.scale.split <- netsplit(net.res.resilience.scale)
+net.res.resilience.scale.split
+
+# %% vscode={"languageId": "r"}
+options(repr.plot.width = 10, repr.plot.height = 5, repr.plot.res = 150)
+plot(net.res.resilience.scale.split)
+
+# %% [markdown]
+# --> Investigating comparisons with heterogeneity not applicable because of too less studies per comparisons to calculate heterogeneity 
+
 # %% [markdown]
 # ### Investigate duplication of study labels due to multiple outcomes, interventions, or time points with the same treatment comparison
 
@@ -6855,7 +6873,66 @@ print.array.not.na(results.descriptive.array[,,,"Outcome.4","Scale.1","Flett 201
 # ## [Mental health-related outcomes] Overall network meta-analysis
 
 # %% [markdown]
-# ### Investigating inconsistancy
+# ### Investigating inconsistancy and heterogeneity
+
+# %% vscode={"languageId": "r"}
+options(repr.plot.width = 10, repr.plot.height = 10, repr.plot.res = 200)
+netheat(net.res.mental.health, nchar.trts = 3)
+
+# %% [markdown]
+# the following comparisions cause inconsistency:
+# - **psc vs. m()_psc vs. m() vs. PMR** <==> **psc vs. m()**
+#   - large square = **larger influence**
+# - **psc vs. stm** (passive control vs. stress management)
+#   - large square = **larger influence**
+# - **psc vs. m()_psc vs. m() vs. PMR** (passive control v.s. exclusive meditation in the study design passive control v.s. exclusive meditation vs. PMR)
+#   - little square = small influence
+# - **psc vs. m()_psc vs. m() vs. PMR** <==> **psc vs. PMR_psc vs. m() vs. PMR**
+#   - little square = small influence
+# - **psc vs. stm** (passive control vs. stress management)
+#   - medium sized square = a bit more influence to the model
+# - **psc vs. m()_psc vs. m() vs. stm** <==> **psc vs. m()_osc vs. m() vs. stm**
+#   - little square = small influnece
+# - **psc vs. m()_psc vs. m() vs. stm** <==> **psc vs. stm_osc vs. m() vs. stm**
+#   - little square = small influnece
+
+# %% vscode={"languageId": "r"}
+# Identify the psc vs. m() vs. PMR design
+net.res.mental.health$data %>%
+  select(.studlab, .design) %>%
+  filter(
+    grepl("passive", .design) &
+    grepl("meditation", .design) &
+    grepl("PMR", .design)
+  ) %>%
+  distinct()
+
+# --> Messer 2016 causes inconsistancy in design meditation (exclusive) vs. passive control vs. PMR
+
+# %% vscode={"languageId": "r"}
+net.res.mental.health.split <- netsplit(net.res.mental.health)
+net.res.mental.health.split
+
+# %% vscode={"languageId": "r"}
+options(repr.plot.width = 10, repr.plot.height = 20, repr.plot.res = 150)
+plot(net.res.mental.health.split)
+
+# %% [markdown]
+# High heterogeneity was found in the following comparisions:
+# - exclusive meditation vs. stress management
+# - biofeedback vs. exclusive meditation
+# - exclusive meditation vs. rest
+# - biofeedback vs. passive control
+# - exlusive meditation vs. PMR
+# - exlusive meditation vs. passive control
+#
+# Inconsistent studies (sig. difference between direct and indirect evidence)
+# - dog therapy vs. meditation (exclusive)
+# - dog therapy vs. stress management
+# - stress management vs. passive control
+
+# %% [markdown]
+# ### Get multi-arm split studies and their number
 
 # %% vscode={"languageId": "r"}
 # Get multi-arm split studies and their number
@@ -6894,6 +6971,7 @@ colnames(net.smd.df) <- net.res.mental.health$trts
 net.smd.df
 
 # %% vscode={"languageId": "r"}
+# Designs, included out comes and number of studies
 options(repr.matrix.max.rows=30, repr.matrix.max.cols=15)
 net.res.mental.health$data %>%
   group_by(.design) %>%
@@ -6941,6 +7019,436 @@ for(i in 1:nrow(net.smd.df)){
 rownames(net.smd.df) <- net.res.mental.health$trts
 colnames(net.smd.df) <- net.res.mental.health$trts
 net.smd.df
+
+# %% [markdown]
+# ### Cutting out Studies due to results of netheat and netsplit
+
+# %% [markdown]
+# #### Inconsistancy
+
+# %% vscode={"languageId": "r"}
+# Removing dog therapy and stress management as comparators to reduce inconsistency in the network meta-analysis
+options(repr.plot.width = 10, repr.plot.height = 10, repr.plot.res = 200)
+net.res.n.dt <- net.meta.analyze(
+  present.outcomes, preferred.scale = F, net.df = F, net.res = F, comparisons.skip.list = list(
+    list(cont.active.dog, cont.active.dog)#,
+    # list(cont.active.stress.man, cont.active.stress.man)
+  ),
+  plot.netgraph = F, plot.forest = F, plot.direct.evidence = F, plot.netheat = T,
+  reference.group = "passive control", random = T, return.data = "net.res"
+)
+
+
+# %% vscode={"languageId": "r"}
+net.res.n.dt
+
+# %% vscode={"languageId": "r"}
+# inconsistancy was due to dog therapy (Spruin 2021 = only study)
+
+# %% vscode={"languageId": "r"}
+options(repr.plot.width = 10, repr.plot.height = 20, repr.plot.res = 150)
+plot(netsplit(net.res.n.dt))
+
+# %% [markdown]
+# #### Heterogeneity
+
+# %% [markdown]
+# comparisons with the highest heterogeneity
+# - biofeedback vs. meditation (exclusive)
+# - meditation (exclusive) vs. stress management
+
+# %% [markdown]
+# ##### Biofeedback
+
+# %% vscode={"languageId": "r"}
+overall.res.m.vs.b <- get.overall.res.metafor(
+  exclude.outcome.vec = c('Resilience Scale', present.outcomes.secondary),
+  comparison.list = list(meditation.type.all, cont.active.bio.feedback)
+)
+overall.res.m.vs.b$data %>% distinct(study.id)  # Ratanasiripong 2015 only study using biofeedback
+
+# %% [markdown]
+# <!-- ##### Meditation (exclusive) vs. passive control -->
+
+# %% [markdown]
+# ##### Meditation (exclusive) vs. rest
+
+# %% vscode={"languageId": "r"}
+overall.res.m.vs.r <- get.overall.res.metafor(
+  exclude.outcome.vec = c('Resilience Scale', present.outcomes.secondary),
+  comparison.list = list(meditation.type.all, cont.active.rest)
+)
+overall.res.m.vs.r$data %>% distinct(study.id) # Studies using rest: Tloczynski 1994, Dillbeck 1977, Silvestre-López 2021, Archary 2021
+
+# %% vscode={"languageId": "r"}
+options(repr.plot.width = 10, repr.plot.height = 8, repr.plot.res = 150)
+forest(overall.res.m.vs.r)
+
+# %% vscode={"languageId": "r"}
+options(repr.plot.width = 10, repr.plot.height = 4, repr.plot.res = 150)
+plot.influnece(overall.res.m.vs.r, cluster = "study.id")
+
+# %% vscode={"languageId": "r"}
+# use trim and fill metheod to insert potential missing studies due to publication bias
+options(repr.plot.width = 15, repr.plot.height = 7, repr.plot.res = 150)
+study.labels <- overall.res.m.vs.r$data$id
+funnel(  # with paramter slab adjusted
+  overall.res.m.vs.r, legend = T,  yaxis="seinv", label = T, slab = study.labels,
+  level=c(90, 95, 99), shade=c("white", "gray55", "gray75"),
+  refline=0, lty = 0, refline2 = overall.res.m.vs.r$b[1,1], lty2 = 3
+    # results.meta$TE.random = overall effect size of the random effects model
+)
+
+# %% vscode={"languageId": "r"}
+overall.res.m.vs.r$data[3,]
+
+# %% vscode={"languageId": "r"}
+overall.res.m.vs.r.n.o <- get.overall.res.metafor(comparison.list = list(meditation.type.all, cont.active.rest), filter.forest..funnel.vec = c("Silvestre-López 2021", "Ramsburg 2014"))
+overall.res.m.vs.r.n.o; overall.res.m.vs.r
+
+# %% [markdown]
+# ##### Meditation (exclusive) vs. stress management
+
+# %% vscode={"languageId": "r"}
+overall.res.m.vs.str <- get.overall.res.metafor(
+  exclude.outcome.vec = c('Resilience Scale', present.outcomes.secondary),
+  comparison.list = list(meditation.type.all, cont.active.stress.man)
+)
+overall.res.m.vs.str
+
+# %% vscode={"languageId": "r"}
+options(repr.plot.width = 10, repr.plot.height = 9, repr.plot.res = 200)
+forest(overall.res.m.vs.str)
+
+# %% vscode={"languageId": "r"}
+options(repr.plot.width = 10, repr.plot.height = 4, repr.plot.res = 150)
+plot.influnece(overall.res.m.vs.str, cluster = "study.id")
+
+# %% vscode={"languageId": "r"}
+# use trim and fill metheod to insert potential missing studies due to publication bias
+options(repr.plot.width = 15, repr.plot.height = 7, repr.plot.res = 150)
+study.labels <- overall.res.m.vs.str$data$id
+funnel(  # with paramter slab adjusted
+  overall.res.m.vs.str, legend = T,  yaxis="seinv", label = T, slab = study.labels,
+  level=c(90, 95, 99), shade=c("white", "gray55", "gray75"),
+  refline=0, lty = 0, refline2 = overall.res.m.vs.r$b[1,1], lty2 = 3
+    # results.meta$TE.random = overall effect size of the random effects model
+)
+
+# %% vscode={"languageId": "r"}
+overall.res.m.vs.str$data[c(8, 9),]
+
+# %% vscode={"languageId": "r"}
+overall.res.no.sm.bf <- get.overall.res.metafor(
+  comparison.list = list(meditation.type.all, cont.active.stress.man), filter.forest..funnel.vec = c(
+    "Ratanasiripong 2015",  # causing heterogeneity in comparisons with biofeedback
+    'Klibert 2022', 'Weytens 2014', 'Kim 2021', 'Spruin 2021'  # causing heterogeneity in comparisons with stress management
+  )
+)
+overall.res.no.sm.bf
+# results are highly influenced by Weytens 2014 and Kim 2021 but cutting both out would lead to a too high data loss
+
+# %% [markdown]
+# #### Both
+
+# %% vscode={"languageId": "r"}
+net.res.n.o <- net.meta.analyze(
+  mental.health.outcomes, preferred.scale = F, net.df = F, net.res = F,
+  
+  filter.forest..funnel.vec = c(
+    "Spruin 2021",  # causing inconsistancy in comparisons with dog therapy
+    "Messer 2016",  # causing inconsistancy in design meditation (exclusive) vs. passive control vs. PMR
+    "Ratanasiripong 2015", # causing heterogeneity in comparisons with biofeedback
+    "Weytens 2014", "Barry 2019", "OrtizCastro 2025", "Devillers-Réolon 2022",  # causing heterogeneity or have high influence in meditation (exclusive) vs. passive control
+    "Silvestre-López 2021",  # causing heterogeneity or have high influence in meditation (exclusive) vs. rest
+    'Weytens 2014'  # causing heterogeneity in meditation (exclusive) vs. stress management
+  ),
+  
+  plot.netgraph = F, plot.forest = F, plot.direct.evidence = F, plot.netheat = F, silent = T,
+  reference.group = "passive control", random = T, return.data = "net.res"
+)
+net.res.n.o
+
+# %% vscode={"languageId": "r"}
+options(repr.plot.width = 10, repr.plot.height = 9, repr.plot.res = 200)
+netheat(net.res.n.o, nchar.trts = 3)
+
+# %% vscode={"languageId": "r"}
+options(repr.plot.width = 10, repr.plot.height = 15, repr.plot.res = 200)
+plot(netsplit(net.res.n.o))
+
+# %% [markdown]
+# ### Comparing network meta-analysis results with and without studies causing inconsistancy, heterogeneity, or have high influence on specific comparison results 
+
+# %% vscode={"languageId": "r"}
+net.res.n.o; net.res.mental.health
+
+# %% vscode={"languageId": "r"}
+# plot forest plots
+options(repr.plot.width = 6, repr.plot.height = 4, repr.plot.res = 200)
+
+# passive control
+forest(
+  net.res.mental.health, sortvar = TE,
+  label.left = "may reduce resilience  ", label.right = "  may improve resilience",
+  layout = "meta"
+)
+forest(
+  net.res.n.o, sortvar = TE,
+  label.left = "may reduce resilience  ", label.right = "  may improve resilience",
+  layout = "meta"
+)
+
+# cognitive control
+forest(
+  reference.group = "cognitive control",
+  net.res.mental.health, sortvar = TE,
+  label.left = "may reduce resilience  ", label.right = "  may improve resilience",
+  layout = "meta"
+)
+forest(
+  reference.group = "cognitive control",
+  net.res.n.o, sortvar = TE,
+  label.left = "may reduce resilience  ", label.right = "  may improve resilience",
+  layout = "meta"
+)
+
+# rest
+forest(
+  reference.group = "rest",
+  net.res.mental.health, sortvar = TE,
+  label.left = "may reduce resilience  ", label.right = "  may improve resilience",
+  layout = "meta"
+)
+forest(
+  reference.group = "rest",
+  net.res.n.o, sortvar = TE,
+  label.left = "may reduce resilience  ", label.right = "  may improve resilience",
+  layout = "meta"
+)
+
+# %% vscode={"languageId": "r"}
+# net.res.all$TE.nma.random
+net.res.mental.health$TE.random[-c(1, 3, 4),"meditation (exclusive)"]
+
+# %% vscode={"languageId": "r"}
+# comparing differences between interventions without specical cases
+# data.frame(meditation = net.res.n.o$pval.random[, "meditation (exclusive)"])
+cat("with special cases included")
+data.frame(
+  dif.to.pas.con.sig = net.res.mental.health$pval.random[-c(1, 3, 4), "passive control"],
+  dif.to.med.sig = net.res.mental.health$pval.random[-c(1, 3, 4), "meditation (exclusive)"], # rows that do not occur in df below cut
+  SMD.dif.to.med = round(net.res.mental.health$TE.random[-c(1, 3, 4),"meditation (exclusive)"], 2)
+)
+data.frame(
+  dif.to.pas.con.sig = net.res.mental.health$pval.random[-c(1, 3, 4), "passive control"] <.05,
+  dif.to.med.sig = net.res.mental.health$pval.random[-c(1, 3, 4), "meditation (exclusive)"] <.05, # rows that do not occur in df below cut
+  SMD.dif.to.med = round(net.res.mental.health$TE.random[-c(1, 3, 4),"meditation (exclusive)"], 2)
+)
+cat("without special cases")
+data.frame(
+  dif.to.pas.con.sig = net.res.n.o$pval.random[- 2, "passive control"] <.05,  # is difference of these group to passive control significant?
+  dif.to.med.sig = net.res.n.o$pval.random[- 2, "meditation (exclusive)"] <.05,  # row meditation (exclusive) cut
+  SMD.dif.to.med = round(net.res.n.o$TE.random[-2,"meditation (exclusive)"], 2)
+)
+
+# %% [markdown]
+# ## [Resileince Factors / Secondary Outcomes] Overall network meta-analysis
+
+# %% [markdown]
+# ### Investigating inconsistancy
+
+# %% vscode={"languageId": "r"}
+options(repr.plot.width = 10, repr.plot.height = 10, repr.plot.res = 200)
+netheat(net.res.secondary.outcomes, nchar.trts = 3)
+
+# %% [markdown]
+# - no comparison causes inconsistency
+
+# %% vscode={"languageId": "r"}
+net.res.secondary.outcomes.split <- netsplit(net.res.secondary.outcomes)
+net.res.secondary.outcomes.split
+
+# %% vscode={"languageId": "r"}
+options(repr.plot.width = 10, repr.plot.height = 20, repr.plot.res = 150)
+plot(net.res.secondary.outcomes.split)
+
+# %% [markdown]
+# - High heterogeneity was found in the following comparisions:
+#   - meditation (exclusive vs. stress management)
+
+# %% [markdown]
+# ### Reporting (League Table and nettable)
+
+# %% vscode={"languageId": "r"}
+# table of p-values comparing all treatments
+round(net.res.secondary.outcomes$pval.random, 2)
+
+# %% vscode={"languageId": "r"}
+# league table
+league.tab <- netleague(net.res.secondary.outcomes)
+league.tab$random
+
+# %% vscode={"languageId": "r"}
+options(repr.matrix.max.rows=10, repr.matrix.max.cols=10)
+# get table of SMDs
+net.smd.df <- data.frame(matrix(".", nrow = net.res.secondary.outcomes$n, ncol = net.res.secondary.outcomes$n))
+
+for(i in 1:nrow(net.smd.df)){
+  for(j in 1:ncol(net.smd.df)){
+    if (i < j){
+      next
+    }
+    # Concatenate the contents and assign to the new data frame
+    net.smd.df[i,j] <- paste(
+      as.character(round(net.res.secondary.outcomes$TE.random[i,j], 2)), " [",
+      as.character(round(net.res.secondary.outcomes$lower.random[i,j], 2)), ", ",
+      as.character(round(net.res.secondary.outcomes$upper.random[i,j], 2)), "]",
+      sep = ""
+    )
+  }
+}
+rownames(net.smd.df) <- net.res.secondary.outcomes$trts
+colnames(net.smd.df) <- net.res.secondary.outcomes$trts
+net.smd.df
+
+# %% [markdown]
+# ### Cutting out Studies due to results of netheat and netsplit
+
+# %% vscode={"languageId": "r"}
+overall.res.m.vs.str <- get.overall.res.metafor(
+  exclude.outcome.vec = present.outcomes.primary,
+  comparison.list = list(meditation.type.all, cont.active.stress.man)
+)
+overall.res.m.vs.str
+
+# %% vscode={"languageId": "r"}
+forest(overall.res.m.vs.str)
+
+# %% vscode={"languageId": "r"}
+options(repr.plot.width = 10, repr.plot.height = 4, repr.plot.res = 150)
+plot.influnece(overall.res.m.vs.str, cluster = "study.id")
+
+# %% vscode={"languageId": "r"}
+# use trim and fill metheod to insert potential missing studies due to publication bias
+options(repr.plot.width = 15, repr.plot.height = 7, repr.plot.res = 150)
+study.labels <- overall.res.m.vs.str$data$id
+funnel(  # with paramter slab adjusted
+  overall.res.m.vs.str, legend = T,  yaxis="seinv", label = T, slab = study.labels,
+  level=c(90, 95, 99), shade=c("white", "gray55", "gray75"),
+  refline=0, lty = 0, refline2 = overall.res.m.vs.r$b[1,1], lty2 = 3
+    # results.meta$TE.random = overall effect size of the random effects model
+)
+
+# %% vscode={"languageId": "r"}
+overall.res.m.vs.str$data[c(1, 7),]
+
+# %% vscode={"languageId": "r"}
+net.res.n.o <- net.meta.analyze(
+  present.outcomes.secondary, preferred.scale = F, net.df = F, net.res = F,
+  
+  filter.forest..funnel.vec = c(
+    "Bonamo 2015",  # causing heterogeneity or have high influence in meditation (exclusive) vs. passive control
+    'Klibert 2022', 'Kim 2021'  # causing heterogeneity in meditation (exclusive) vs. stress management
+  ),
+  
+  plot.netgraph = F, plot.forest = F, plot.direct.evidence = F, plot.netheat = F, silent = T,
+  reference.group = "passive control", random = T, return.data = "net.res"
+)
+net.res.n.o
+
+# %% vscode={"languageId": "r"}
+options(repr.plot.width = 10, repr.plot.height = 9, repr.plot.res = 200)
+netheat(net.res.n.o, nchar.trts = 3)
+
+# %% vscode={"languageId": "r"}
+options(repr.plot.width = 10, repr.plot.height = 10, repr.plot.res = 200)
+plot(netsplit(net.res.n.o))
+
+# %% [markdown]
+# ### Comparing network meta-analysis results with and without studies causing inconsistancy, heterogeneity, or have high influence on specific comparison results 
+
+# %% vscode={"languageId": "r"}
+message(
+  "Included outcomes with suspecious studies:\n\t'",
+  paste(net.res.secondary.outcomes$data$outcome %>% unique() %>% sort(), collapse = "','"), "'"
+)
+message(
+  "Included outcomes without suspecious studies:\n\t'",
+  paste(net.res.n.o$data$outcome %>% unique() %>% sort(), collapse = "','"), "'"
+)
+message(
+  "Removed outcomes due to suspecious studies:\n\t'",
+  paste(setdiff(net.res.secondary.outcomes$data$outcome %>% unique(), net.res.n.o$data$outcome %>% unique()), collapse = "','"), "'"
+)
+
+# %% vscode={"languageId": "r"}
+net.res.n.o; net.res.secondary.outcomes
+
+# %% vscode={"languageId": "r"}
+# plot forest plots
+options(repr.plot.width = 6, repr.plot.height = 4, repr.plot.res = 200)
+
+# passive control
+forest(
+  net.res.secondary.outcomes, sortvar = TE,
+  label.left = "may reduce resilience  ", label.right = "  may improve resilience",
+  layout = "meta"
+)
+forest(
+  net.res.n.o, sortvar = TE,
+  label.left = "may reduce resilience  ", label.right = "  may improve resilience",
+  layout = "meta"
+)
+
+# cognitive control
+forest(
+  reference.group = "cognitive control",
+  net.res.secondary.outcomes, sortvar = TE,
+  label.left = "may reduce resilience  ", label.right = "  may improve resilience",
+  layout = "meta"
+)
+forest(
+  reference.group = "cognitive control",
+  net.res.n.o, sortvar = TE,
+  label.left = "may reduce resilience  ", label.right = "  may improve resilience",
+  layout = "meta"
+)
+
+# rest
+forest(
+  reference.group = "rest",
+  net.res.secondary.outcomes, sortvar = TE,
+  label.left = "may reduce resilience  ", label.right = "  may improve resilience",
+  layout = "meta"
+)
+forest(
+  reference.group = "rest",
+  net.res.n.o, sortvar = TE,
+  label.left = "may reduce resilience  ", label.right = "  may improve resilience",
+  layout = "meta"
+)
+
+# %% vscode={"languageId": "r"}
+# comparing differences between interventions without specical cases
+# data.frame(meditation = net.res.n.o$pval.random[, "meditation (exclusive)"])
+cat("with special cases included")
+data.frame(
+  dif.to.pas.con.sig = net.res.secondary.outcomes$pval.random[-c(1, 3, 4), "passive control"],
+  dif.to.med.sig = net.res.secondary.outcomes$pval.random[-c(1, 3, 4), "meditation (exclusive)"], # rows that do not occur in df below cut
+  SMD.dif.to.med = round(net.res.secondary.outcomes$TE.random[-c(1, 3, 4),"meditation (exclusive)"], 2)
+)
+data.frame(
+  dif.to.pas.con.sig = net.res.secondary.outcomes$pval.random[-c(1, 3, 4), "passive control"] <.05,
+  dif.to.med.sig = net.res.secondary.outcomes$pval.random[-c(1, 3, 4), "meditation (exclusive)"] <.05, # rows that do not occur in df below cut
+  SMD.dif.to.med = round(net.res.secondary.outcomes$TE.random[-c(1, 3, 4),"meditation (exclusive)"], 2)
+)
+cat("without special cases")
+data.frame(
+  dif.to.pas.con.sig = net.res.n.o$pval.random[- 2, "passive control"] <.05,  # is difference of these group to passive control significant?
+  dif.to.med.sig = net.res.n.o$pval.random[- 2, "meditation (exclusive)"] <.05,  # row meditation (exclusive) cut
+  SMD.dif.to.med = round(net.res.n.o$TE.random[-2,"meditation (exclusive)"], 2)
+)
 
 # %% [markdown]
 # # Create Shiny Dashboard (of inference statistics)
