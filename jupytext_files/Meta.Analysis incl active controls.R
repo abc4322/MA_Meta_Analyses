@@ -68,8 +68,9 @@
 # - [x] Implement additional outcomes and interventions from theresa
 # - [x] fix update.meta bug
 # - [x] Define outliers and influential cases
-# - [] Define studies causing inconsistency (split models primary and secondary outcomes)
+# - [x] Define studies causing inconsistency (split models primary and secondary outcomes)
 # - [x] Check if addition of 6th intervention affects the med.vec.list variable
+# - [ ] reflect multiple network models in get.sens.anal.df.R() when model == "net"
 
 # %% [markdown]
 # # Preprocess Data
@@ -3508,10 +3509,10 @@ regression.labels.df
 # "Linear Regressions (comparison with/without outliers; without mean ranges)" tab per regression variable of outcomes
 outlier.list <- list(
   `Resilience Scale` = c(),
-  `Anxiety` = c(14),  # Devillers-Réolon 2022
+  `Anxiety` = c(1, 13, 14),  # Messer 2016, Bultas 2021, Devillers-Réolon 2022
   `Depression` = c(1, 2, 11, 12),  # Weytens 2014, Barry 2019, OrtizCastro 2025, Devillers-Réolon 2022
     # (difference to search update; before it was only Devillers-Réolon 2022)
-  Stress = c(18),  # Devillers-Réolon 2022
+  Stress = c(1, 18),  # Messer 2016, Devillers-Réolon 2022
   `Well-being or quality of life` = c(),
   Acceptance = c(),
   `Active coping` = c(),
@@ -3532,7 +3533,7 @@ outlier.list <- list(
     `Resilience Scale` = c(),
     `Anxiety` = c(12),  # Devillers-Réolon 2022
     `Depression` = c(),  # k < 10 when excluding outliers
-    Stress = c(1, 8, 16),  # Messer 2016, Waechter 2021, Devillers-Réolon 2022
+    Stress = c(1, 8, 15, 16),  # Messer 2016, Waechter 2021, Bultas 2021, Devillers-Réolon 2022
     `Well-being or quality of life` = c(),
     Acceptance = c(),
     `Active coping` = c(),
@@ -3553,7 +3554,7 @@ outlier.list <- list(
     `Resilience Scale` = c(),
     `Anxiety` = c(1, 11),  # Waechter 2021, Devillers-Réolon 2022
     `Depression` = c(),  # k < 10 when excluding outliers
-    Stress = c(1, 8, 16),  # Messer 2016, Waechter 2021, Devillers-Réolon 2022
+    Stress = c(1, 8, 15, 16),  # Messer 2016, Waechter 2021, Bultas 2021, Devillers-Réolon 2022
     `Well-being or quality of life` = c(),
     Acceptance = c(),
     `Active coping` = c(),
@@ -3778,7 +3779,22 @@ outlier.list <- list(
     'Bultas 2021', 'Devillers-Réolon 2022', 'Huberty 2019', 'Messer 2016', 'Bonamo 2015',  # causing heterogeneity or have high influence in meditation (exclusive) vs. passive control
     "Silvestre-López 2021", "Ramsburg 2014",  # causing heterogeneity or have high influence  in meditation (exclusive) vs. passive control
     'Klibert 2022', 'Spruin 2021'  # causing heterogeneity in meditation (exclusive) vs. stress management
+  ),
+
+  net.mental.health = c(
+    "Spruin 2021",  # causing inconsistancy in comparisons with dog therapy
+    "Messer 2016",  # causing inconsistancy in design meditation (exclusive) vs. passive control vs. PMR
+    "Ratanasiripong 2015", # causing heterogeneity in comparisons with biofeedback
+    "Weytens 2014", "Barry 2019", "OrtizCastro 2025", "Messer 2016", "Bultas 2021", "Devillers-Réolon 2022",  # causing heterogeneity or have high influence in meditation (exclusive) vs. passive control
+    "Silvestre-López 2021",  # causing heterogeneity or have high influence in meditation (exclusive) vs. rest
+    'Weytens 2014'  # causing heterogeneity in meditation (exclusive) vs. stress management
+  ),
+
+  net.secondary.outcomes = c(
+    "Bonamo 2015",  # causing heterogeneity or have high influence in meditation (exclusive) vs. passive control
+    'Klibert 2022', 'Kim 2021'  # causing heterogeneity in meditation (exclusive) vs. stress management
   )
+  
 )
 
 # %% [markdown] heading_collapsed=true hidden=true
@@ -5672,6 +5688,8 @@ for (outcome in present.outcomes.sorted){
 sens.anal.df.all
 
 # %% hidden=true vscode={"languageId": "r"}
+options(repr.matrix.max.rows=80, repr.matrix.max.cols=80)
+
 # generate df that shows if primary analyses are robust against analyzerd choices
 sens.summary.df <- data.frame(
   c(unique(sens.anal.df.all$outcome)),
@@ -6051,9 +6069,10 @@ sens.summary.df
 # ## Investigation of outlier/influential case characteristics compared to rest of included studies of the respective outcomes (random-effects models)
 
 # %% [markdown] heading_collapsed=true hidden=true
-# ### Devillers-Réolon 2022
+# ### Primary Outcomes
 
 # %% hidden=true vscode={"languageId": "r"}
+# Get study labels of all studies for the outcomes stress, anxiety, and depression (primary outcomes that contain outliers or influential cases)
 study.names.stress.anx.depr <- sort(unique(c(
   print.meta.results(
     "Stress", preferred.scale = "DASS",
@@ -6074,12 +6093,73 @@ study.names.stress.anx.depr <- sort(unique(c(
 study.names.stress.anx.depr
 
 # %% hidden=true vscode={"languageId": "r"}
+# Get total descriptive statistices of participants and intervention characteristics of these studies
 get.part.desc.by.stud(study.names.stress.anx.depr)
 get.int.char.by.stud(study.names.stress.anx.depr)
 
+# %% vscode={"languageId": "r"}
+# Get study labels of outliers and influential cases for the primary outcomes
+outlier_list_study_labs_primary_outcomes <- list(
+  Anxiety = c("Messer 2016", "Bultas 2021", "Devillers-Réolon 2022"),
+  Depression = c("Weytens 2014", "Barry 2019", "OrtizCastro 2025", "Devillers-Réolon 2022"),
+  Stress = c("Devillers-Réolon 2022")
+)
+
+outlier_study_labs_primary_outcomes <- outlier_list_study_labs_primary_outcomes %>%
+  unlist() %>%
+  unique()
+outlier_study_labs_primary_outcomes
+
 # %% hidden=true vscode={"languageId": "r"}
-get.part.desc.by.stud("Devillers-Réolon 2022")
-get.int.char.by.stud("Devillers-Réolon 2022")
+# Get descriptive statistices of participants and intervention characteristics of these suspicious studies
+get.part.desc.by.stud(outlier_study_labs_primary_outcomes)
+get.int.char.by.stud(outlier_study_labs_primary_outcomes)
+
+# %% vscode={"languageId": "r"}
+# With outliers
+for (outcome in c(
+  # "Anxiety",  # k < 10 for moderator female.percent
+  # "Depression",  # # k < 10 for moderator female.percent
+  "Stress"
+)){
+  regression_results <- print.meta.results(
+    outcome, preferred.scale = get.1st.preferred.scale(outcome),
+    basic = F, moderator.vec = c("female.percent"), print.regplot = T, print.baujat.regression = F, print.regression.results = F, regression.degree.1 = T, regression.degree.2 = F,
+    regression.label = T, return.data = "regression.results.linear"
+  )
+  print(summary(regression_results))
+}
+
+# %% vscode={"languageId": "r"}
+# Investigate outliers
+for (outcome in c(
+  # "Anxiety",  # k < 10 for moderator female.percent
+  # "Depression",  # # k < 10 for moderator female.percent
+  "Stress"
+)){
+  regression_results <- print.meta.results(
+    outcome, preferred.scale = get.1st.preferred.scale(outcome),
+    basic = F, moderator.vec = c("female.percent"), print.regplot = F, print.baujat.regression = F, print.regression.results = F, regression.degree.1 = T, regression.degree.2 = F,
+    regression.label = T, return.data = "regression.results.linear", print.influence = T
+  )
+  print(summary(regression_results))
+}
+
+# %% vscode={"languageId": "r"}
+# Without outliers
+for (outcome in c(
+  # "Anxiety",  # k < 10 for moderator female.percent
+  # "Depression",  # # k < 10 for moderator female.percent
+  "Stress"
+)){
+  regression_results <- print.meta.results(
+    outcome, preferred.scale = get.1st.preferred.scale(outcome),
+    basic = F, moderator.vec = c("female.percent"), print.regplot = T, print.baujat.regression = F, print.regression.results = F, regression.degree.1 = T, regression.degree.2 = F,
+    regression.label = T, return.data = "regression.results.linear",
+    filter.regression.linear.list = list(-c(1, 11, 13))
+  )
+  print(summary(regression_results))
+}
 
 # %% [markdown] heading_collapsed=true hidden=true
 # ### Bonamo 2015
@@ -6856,9 +6936,6 @@ net.res.resilience.scale$data %>% filter(grepl("Flett 2019b", .studlab))
 outcome.names.df %>% filter(row.names(.) == "Flett 2019b")
 
 # %% vscode={"languageId": "r"}
-m.data.df.list
-
-# %% vscode={"languageId": "r"}
 options(repr.matrix.max.rows=10, repr.matrix.max.cols=10)
 intervention.comparisons.df.list[["Flett 2019b"]]
 
@@ -7159,7 +7236,7 @@ net.res.n.o <- net.meta.analyze(
     "Spruin 2021",  # causing inconsistancy in comparisons with dog therapy
     "Messer 2016",  # causing inconsistancy in design meditation (exclusive) vs. passive control vs. PMR
     "Ratanasiripong 2015", # causing heterogeneity in comparisons with biofeedback
-    "Weytens 2014", "Barry 2019", "OrtizCastro 2025", "Devillers-Réolon 2022",  # causing heterogeneity or have high influence in meditation (exclusive) vs. passive control
+    "Weytens 2014", "Barry 2019", "OrtizCastro 2025", "Messer 2016", "Bultas 2021", "Devillers-Réolon 2022",  # causing heterogeneity or have high influence in meditation (exclusive) vs. passive control
     "Silvestre-López 2021",  # causing heterogeneity or have high influence in meditation (exclusive) vs. rest
     'Weytens 2014'  # causing heterogeneity in meditation (exclusive) vs. stress management
   ),
@@ -7435,7 +7512,7 @@ forest(
 cat("with special cases included")
 data.frame(
   dif.to.pas.con.sig = net.res.secondary.outcomes$pval.random[-c(1, 3, 4), "passive control"],
-  dif.to.med.sig = net.res.secondary.outcomes$pval.random[-c(1, 3, 4), "meditation (exclusive)"], # rows that do not occur in df below cut
+  dif.to.med.sig = net.res.secondary.outcomes$pval.random[-c(1, 3, 4), "meditation (exclusive)"], # rows that do not occur in df below cutö
   SMD.dif.to.med = round(net.res.secondary.outcomes$TE.random[-c(1, 3, 4),"meditation (exclusive)"], 2)
 )
 data.frame(
