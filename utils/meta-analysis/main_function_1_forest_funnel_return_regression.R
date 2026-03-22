@@ -494,17 +494,19 @@ meta.analyze <- function(
             cat("\n")
             cat("# Subgroup Analysis:", subgroup, "\n")
           }
+
+          meta.df_sub_no_na <- meta.df.list[[1]] %>%
+            filter(!(
+              is.na(!!sym(subgroup)) |
+              !!sym(subgroup) %in% c( "NA", nm.placeholder)
+            ))
           
           # get results for test of subgroup differences with desired method 
           results.meta.sub <- metacont(
             n.e = n.int, mean.e = mean.int, sd.e = sd.int,
             n.c = n.control, mean.c = mean.control, sd.c = sd.control,
             common = T, random = T, studlab = study.id,
-            data = meta.df.list[[1]] %>%
-              filter(!(
-                is.na(!!sym(subgroup)) |
-                !!sym(subgroup) %in% c( "NA", nm.placeholder)
-              )),
+            data = meta.df_sub_no_na,
             sm = "SMD"
           )
           if (subgroup.method == "fixed"){  # corresponds to Schwarzer et al. (2015). Meta-Analysis with R. doi: 10.1007/978-3-319-21416-0, pp. 41 - 45 & 89 - 91
@@ -522,18 +524,18 @@ meta.analyze <- function(
             )
           } else if (subgroup.method == "random.separate.tau2"){  # corresponds to Schwarzer et al. (2015) pp. 91 - 94
             # get separete results for all levels of subgroups (random effect model)
-            sub.lvls <- unique(results.meta$data[, subgroup])
+            sub.lvls <- unique(results.meta$data[, subgroup]) %>% na.omit()
             results.meta.subs <- list()
             TE.del <- c()
             seTE.del <- c()
             i <- 1
             for (sub.lvl in sub.lvls){
-              # generate results object for subset ob subgroup level
+              # generate results object for subset of subgroup level
               sub.res <- metacont(
                 n.e = n.int, mean.e = mean.int, sd.e = sd.int,
                 n.c = n.control, mean.c = mean.control, sd.c = sd.control,
                 common = F, random = T, studlab = study.id,
-                data = meta.df.list[[1]], sm = "SMD",
+                data = meta.df_sub_no_na, sm = "SMD",
                 subset = eval(parse(text = subgroup)) == sub.lvl
               )
               
@@ -598,7 +600,13 @@ meta.analyze <- function(
             }
             
           } else if (subgroup.method == "random.common.tau2"){  # corresponds to Schwarzer et al. (2015) pp. 94 - 97
-            results.meta.sub <- update.meta(results.meta, subgroup = eval(parse(text = subgroup)), tau.common = T, common = F, random = T)
+            results.meta_sub_pre <- metacont(
+              n.e = n.int, mean.e = mean.int, sd.e = sd.int,
+              n.c = n.control, mean.c = mean.control, sd.c = sd.control,
+              common = forest.add.fix.eff.mod, random = T, studlab = study.id,
+              data = meta.df_sub_no_na, sm = "SMD"
+            )
+            results.meta.sub <- update.meta(results.meta_sub_pre, subgroup = eval(parse(text = subgroup)), tau.common = T, common = F, random = T)
           } else {
             print("error in meta.analyze(): set parameter 'subgroup.method' to 'fixed', 'random.separate.tau2' or 'random.common.tau2'")
           }
