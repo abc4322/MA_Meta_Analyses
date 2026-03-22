@@ -120,7 +120,8 @@ plot.summary.forest <- function(
   outcome_vec = present.outcomes,
   title = "Summary Forest Plot",
   no.participants.df.n.total.imputed_ = no.participants.df.n.total.imputed,
-  study.names.suff.data_ = study.names.suff.data
+  study.names.suff.data_ = study.names.suff.data,
+  outlier.list_ = outlier.list
 ) {
   # parameter with.outliers is not implemented for the overall results of the network meta-analysis model 
   # get total effect sizes and confidence intervals of all outcomes
@@ -144,7 +145,7 @@ plot.summary.forest <- function(
     results.meta <- meta.analyze(
       outcome = outcome, meditation.types = meditation.type.all, m.data.list = m.data.list,
       return.data = "results.meta", preferred.scale = get.1st.preferred.scale(outcome), split.subgroups = FALSE,
-      filter.forest..funnel.vec = if(length(outlier.list[[outcome]]) > 0 & !with.outliers){-outlier.list[[outcome]]}else{FALSE}
+      filter.forest..funnel.vec = if(length(outlier.list_[[outcome]]) > 0 & !with.outliers){-outlier.list_[[outcome]]}else{FALSE}
     )
     if (results.meta$k > 0){
       outcomes <- append(outcomes, outcome)
