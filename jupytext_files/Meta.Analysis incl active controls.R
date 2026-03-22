@@ -5347,6 +5347,9 @@ library(rmarkdown)
 # %% [markdown] heading_collapsed=true
 # ## Get all present outcomes names with sufficient data and passive controls and plots for outcomes in loop
 
+# %% vscode={"languageId": "r"}
+which(present.outcomes.passive == "Other: ")
+
 # %% hidden=true vscode={"languageId": "r"}
 #
 present.outcomes.passive <- c()
@@ -5367,7 +5370,10 @@ for (row in 1:nrow(outcome.names.df.passive)){
   }
 }
 
-present.outcomes.passive <- present.outcomes.passive[-c(which(present.outcomes.passive == "Other: "))]  # delete "Other: "
+other_in_present.outcomes.passive <- length(which(present.outcomes.passive == "Other: ")) > 0
+if (other_in_present.outcomes.passive) {
+  present.outcomes.passive <- present.outcomes.passive[-c(which(present.outcomes.passive == "Other: "))]  # delete "Other: "
+}
 outcomes.no.df.passive <- data.frame(table(present.outcomes.passive))
 
 present.outcomes.passive <- unique(present.outcomes.passive)
@@ -5906,6 +5912,9 @@ sens.summary.df  # check sign robustness
 
 # %% [markdown] heading_collapsed=true hidden=true
 # ### Tests of subgroup differences
+
+# %% vscode={"languageId": "r"}
+outcomes.no.10.plus.passive
 
 # %% hidden=true vscode={"languageId": "r"}
 # get df of all sensitivity analysis
