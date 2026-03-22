@@ -236,9 +236,31 @@ get.sens.anal.df <- function(
           basic = F, moderator.vec = c(moderator), print.regplot = F, print.baujat.regression = F, print.regression.results = F, regression.degree.1 = T, regression.degree.2 = F,
           regression.label = T, return.data = "regression.results.linear"
         )
-
-        lvl.names <- unique(res$data[, moderator])
         
+        # Get the names of the levels of the moderator variable from the data
+        lvl.names <- unique(res$data[, moderator])
+
+        # Make sure the order matches the order of the coefficients in res$b
+        lvl.names_b <- res$b[, 1] %>%  # get named vector of model coefficients
+          names() %>%  # get the names of the coefficients (e.g., "Intrcpt", "meditation.typehybrid form", "meditation.typeconstructive family")
+          gsub(moderator, "", .)  # exclude moderator name from coefficient names to get level names (e.g., "hybrid form", "constructive family")
+        
+        # Reorder lvl.names to match the order of lvl.names_b
+        # lvl.names_b has "intrcpt" where lvl.names has the reference level name
+        lvl.names_ordered <- c()
+        for (b_name in lvl.names_b) {
+          if (tolower(b_name) == "intrcpt") {
+            # Find the reference level: the one in lvl.names not present in lvl.names_b
+            ref_lvl <- setdiff(lvl.names, lvl.names_b[tolower(lvl.names_b) != "intrcpt"])
+            lvl.names_ordered <- append(lvl.names_ordered, ref_lvl)
+          } else {
+            lvl.names_ordered <- append(lvl.names_ordered, b_name)
+          }
+        }
+        lvl.names <- lvl.names_ordered
+
+        
+
         mod.res.names <- c()
         k.w.names <- c()
         for (lvl.name in lvl.names){
