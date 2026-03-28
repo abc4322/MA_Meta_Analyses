@@ -3577,7 +3577,7 @@ outlier.list <- list(
     `Anxiety` = c(9, 12),  # OrtizCastro 2025, Devillers-Réolon 2022
       # difference in search update; before, it were Waechter 2021 and Devillers-Réolon 2022
     `Depression` = c(),  # k < 10 when excluding outliers
-    Stress = c(10, 13),  # OrtizCastro 2025, Devillers-Réolon 2022
+    Stress = c(10, 12, 13),  # OrtizCastro 2025, Bultas 2021, Devillers-Réolon 2022
       # difference in search update; before, it were Waechter 2021 and Devillers-Réolon 2022
     `Well-being or quality of life` = c(),
     Acceptance = c(),
@@ -3600,7 +3600,7 @@ outlier.list <- list(
     `Anxiety` = c(9, 12),  # OrtizCastro 2025, Devillers-Réolon 2022
       # difference in search update; before, it were Waechter 2021 and Devillers-Réolon 2022
     `Depression` = c(),  # k < 10 when excluding outliers
-    Stress = c(10, 13),  # OrtizCastro 2025, Devillers-Réolon 2022
+    Stress = c(10, 12, 13),  # OrtizCastro 2025, Bultas 2021, Devillers-Réolon 2022
       # difference in search update; before, it were Waechter 2021 and Devillers-Réolon 2022
     `Well-being or quality of life` = c(),
     Acceptance = c(),
@@ -3722,8 +3722,7 @@ outlier.list <- list(
     `Depression` = c(),
       # difference in search update; before it were 2; now, it was decided to not exclude
       # outliers when the resulting nubmer of studies is < 10
-    Stress = c(5, 17, 18),  # Weytens 2014, Bultas 2021, Devillers-Réolon 2022
-       # difference in search update; before it were only Bultas 2021, Devillers-Réolon 2022
+    Stress = c(17, 18),  # Bultas 2021, Devillers-Réolon 2022
       # "DASS" was used as preferred scale
     `Well-being or quality of life` = c(),
     Acceptance = c(),
@@ -5030,7 +5029,8 @@ for (study in 1:study.no){
   )
   
   for (row in 1:nrow(df)){
-    sessions.duration <- ifelse(is.na.or.nm(df[row, "Sessions.Duration.in.minutes"]), NA, df[row, "Sessions.Duration.in.minutes"])
+    sessions.duration <- ifelse(is.na.or.nm(df[row, "Sessions.Duration.in.minutes"]), NA, df[row, "Sessions.Duration.in.minutes"]) %>%
+        
     sessions.durations.vec <- append(sessions.durations.vec, sessions.duration)
     
     sessions.frequency <- ifelse(is.na.or.nm(df[row, "Frequency.in.times.per.week"]), NA, df[row, "Frequency.in.times.per.week"])
@@ -5346,9 +5346,6 @@ library(rmarkdown)
 
 # %% [markdown] heading_collapsed=true
 # ## Get all present outcomes names with sufficient data and passive controls and plots for outcomes in loop
-
-# %% vscode={"languageId": "r"}
-which(present.outcomes.passive == "Other: ")
 
 # %% hidden=true vscode={"languageId": "r"}
 #
@@ -5912,9 +5909,6 @@ sens.summary.df  # check sign robustness
 
 # %% [markdown] heading_collapsed=true hidden=true
 # ### Tests of subgroup differences
-
-# %% vscode={"languageId": "r"}
-outcomes.no.10.plus.passive
 
 # %% hidden=true vscode={"languageId": "r"}
 # get df of all sensitivity analysis
@@ -7339,6 +7333,22 @@ data.frame(
 )
 
 # %% [markdown]
+# ### Comparison-adjusted funnel plot 
+
+# %% vscode={"languageId": "r"}
+options(repr.plot.width = 10, repr.plot.height = 7, repr.plot.res = 150)
+funnel(
+  net.res.mental.health, order = "passive control", #method.bias = "Egger",
+  legend = T,  yaxis="invse", col = c(
+    "blue", "red", "purple", "forestgreen", "aquamarine", 
+    "gold4", "black", "brown"
+#     "orange", "pink", 
+#     "khaki", "plum", , "sandybrown", 
+#     "coral", "gold4"
+  )
+)
+
+# %% [markdown]
 # ## [Resileince Factors / Secondary Outcomes] Overall network meta-analysis
 
 # %% [markdown]
@@ -7361,7 +7371,7 @@ plot(net.res.secondary.outcomes.split)
 
 # %% [markdown]
 # - High heterogeneity was found in the following comparisions:
-#   - meditation (exclusive vs. stress management)
+#   - meditation (exclusive) vs. stress management
 
 # %% [markdown]
 # ### Reporting (League Table and nettable)
@@ -7472,6 +7482,11 @@ message(
 net.res.n.o; net.res.secondary.outcomes
 
 # %% vscode={"languageId": "r"}
+net.res.secondary.outcomes$data %>% group_by(outcome) %>% summarise(studies = n_distinct(studlab)) %>% arrange(desc(studies))
+
+# %% vscode={"languageId": "r"}
+# Set plot dimensions
+options(repr.plot.width = 20, repr.plot.height = 8)
 # plot forest plots
 options(repr.plot.width = 6, repr.plot.height = 4, repr.plot.res = 200)
 
@@ -7861,9 +7876,13 @@ library("robvis")
 outcome.names.df
 
 # %% hidden=true vscode={"languageId": "r"}
-rob.df
-
-# %% vscode={"languageId": "r"}
+rob.df <- rob.df %>%
+  mutate(across(
+    2:ncol(rob.df), ~ case_when(
+      row.names(rob.df) == "Grogan 2025" ~ "Some concerns",
+      TRUE ~ .
+    )
+  ))
 
 # %% hidden=true vscode={"languageId": "r"}
 rob_traffic_light(
