@@ -5030,13 +5030,22 @@ for (study in 1:study.no){
   
   for (row in 1:nrow(df)){
     sessions.duration <- ifelse(is.na.or.nm(df[row, "Sessions.Duration.in.minutes"]), NA, df[row, "Sessions.Duration.in.minutes"]) %>%
-        
+        # For every element, remove non-numeric characters (except decimal separators (dots))and convert to numeric
+        gsub("[^0-9.]", "", .) %>%
+        as.numeric()
+
     sessions.durations.vec <- append(sessions.durations.vec, sessions.duration)
     
-    sessions.frequency <- ifelse(is.na.or.nm(df[row, "Frequency.in.times.per.week"]), NA, df[row, "Frequency.in.times.per.week"])
+    sessions.frequency <- ifelse(is.na.or.nm(df[row, "Frequency.in.times.per.week"]), NA, df[row, "Frequency.in.times.per.week"]) %>%
+        # For every element, remove non-numeric characters (except decimal separators (dots))and convert to numeric
+        gsub("[^0-9.]", "", .) %>%
+        as.numeric()
     sessions.frequencies.vec <- append(sessions.frequencies.vec, sessions.frequency)
     
-    programs.duration <- ifelse(is.na.or.nm(df[row, "Total.Duration.in.Days"]), NA, df[row, "Total.Duration.in.Days"])
+    programs.duration <- ifelse(is.na.or.nm(df[row, "Total.Duration.in.Days"]), NA, df[row, "Total.Duration.in.Days"]) %>%
+        # For every element, remove non-numeric characters (except decimal separators (dots))and convert to numeric
+        gsub("[^0-9.]", "", .) %>%
+        as.numeric()
     programs.durations.vec <- append(programs.durations.vec, programs.duration)
   }
 }
