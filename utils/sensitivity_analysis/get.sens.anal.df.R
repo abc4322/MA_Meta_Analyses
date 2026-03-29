@@ -202,9 +202,8 @@ get.sens.anal.df <- function(
         if (save.as == "png"){
           gtsave(
             gt.object,
-            paste(
-              saving.path, "Sens.anal.table.", outcome, ".",
-              save.as, sep = ""
+            file.path(
+              saving.path, paste0("Sens.anal.table.", outcome, ".", save.as)
             ),
             vwidth = 1750,
             vheight = round(nrow(sens.anal.df) / 16 * 2000, 0)
@@ -212,9 +211,8 @@ get.sens.anal.df <- function(
         } else {
           gtsave(
             gt.object,
-            paste(
-              saving.path, "Sens.anal.table.", outcome, ".",
-              save.as, sep = ""
+            file.path(
+              saving.path, paste0("Sens.anal.table.", outcome, ".", save.as)
             )
           )
         }
@@ -492,7 +490,7 @@ get.sens.anal.df <- function(
                 ifelse(moderator %in% c("delivery.mode", "meditation.type"), "", "; mean range values - included = 1, excluded = 0; degree of model - linear = 1, squared = 0"),
                 sep = ""
               )
-            } else if (outcome == "Anxiety"){
+            } else if (outcome %in% c("Anxiety", "Depression", "Mindfulness")){
               paste(
                 "Meaning of digits in decision codes (same digit order): ",
                 ifelse(length(outliers) == 0, "", "outliers and influential cases included - yes = 1, no = 0; "),
@@ -511,9 +509,8 @@ get.sens.anal.df <- function(
         if (save.as == "png"){
           gtsave(
             gt.object,
-            paste(
-              saving.path, "Sens.anal.table.", outcome, ".",
-              moderator, ".reg.", save.as, sep = ""
+            file.path(
+              saving.path, paste0("Sens.anal.table.", outcome, ".", moderator, ".reg.", save.as)
             ),
             vwidth = round(ncol(sens.anal.df) / 31 * 3300, 0),
             vheight = round(sqrt(nrow(sens.anal.df) / 32) * 2000, 0)
@@ -521,9 +518,8 @@ get.sens.anal.df <- function(
         } else {
           gtsave(
             gt.object,
-            paste(
-              saving.path, "Sens.anal.table.", outcome, ".",
-              moderator, ".reg.", save.as, sep = ""
+            file.path(
+              saving.path, paste0("Sens.anal.table.", outcome, ".", moderator, ".reg.", save.as)
             )
           )
         }
@@ -766,9 +762,8 @@ get.sens.anal.df <- function(
         if (save.as == "png"){
           gtsave(
             gt.object,
-            paste(
-              saving.path, "Sens.anal.table.", outcome, ".", subgroup, ".sub.",
-              save.as, sep = ""
+            file.path(
+              saving.path, paste0("Sens.anal.table.", outcome, ".", subgroup, ".sub.", save.as)
             ),
             vwidth = round(ncol(sens.anal.df) / 35 * 4000, 0),
             vheight = round(nrow(sens.anal.df) / 12 * 1000, 0)
@@ -776,9 +771,8 @@ get.sens.anal.df <- function(
         } else {
           gtsave(
             gt.object,
-            paste(
-              saving.path, "Sens.anal.table.", outcome, ".", subgroup, ".sub.",
-              save.as, sep = ""
+            file.path(
+              saving.path, paste0("Sens.anal.table.", outcome, ".", subgroup, ".sub.", save.as)
             )
           )
         }
@@ -820,27 +814,33 @@ get.sens.anal.df <- function(
       for (preferred.scale in c("DASS", "PSS")){
         for (out.inf in c("out.inf.incl", "out.inf.excl")){
           for (tol.multiarm in c(1, 0.01, 0.001)){
-
-            res <- net.meta.analyze(
-              outcome, preferred.scale = preferred.scale, net.df = F, net.res = F, comparisons.skip.list = F,
-              plot.netgraph = F, plot.forest = F, plot.direct.evidence = F, plot.netheat = F,
-              reference.group = "passive control", random = T, return.data = "net.res", silent = T, tol.multiarm = tol.multiarm,
-              filter.forest..funnel.vec = if (out.inf == "out.inf.incl"){
-                if(tol.multiarm == 0.001){inc.mult.arm.stud.001}else if(tol.multiarm == 0.01){inc.mult.arm.stud.01}else{F}
-              } else {
-                if(length(outliers) == 0){
+            
+            # get vector of result values (NA row if net.meta.analyze fails)
+            sens.anal.vec.df <- tryCatch({
+              res <- net.meta.analyze(
+                outcome, preferred.scale = preferred.scale, net.df = F, net.res = F, comparisons.skip.list = F,
+                plot.netgraph = F, plot.forest = F, plot.direct.evidence = F, plot.netheat = F,
+                reference.group = "passive control", random = T, return.data = "net.res", silent = T, tol.multiarm = tol.multiarm,
+                filter.forest..funnel.vec = if (out.inf == "out.inf.incl"){
                   if(tol.multiarm == 0.001){inc.mult.arm.stud.001}else if(tol.multiarm == 0.01){inc.mult.arm.stud.01}else{F}
                 } else {
-                  if(tol.multiarm == 0.001){c(inc.mult.arm.stud.001, outliers)}else if(tol.multiarm == 0.01){c(inc.mult.arm.stud.01, outliers)}else{outliers}
+                  if(length(outliers) == 0){
+                    if(tol.multiarm == 0.001){inc.mult.arm.stud.001}else if(tol.multiarm == 0.01){inc.mult.arm.stud.01}else{F}
+                  } else {
+                    if(tol.multiarm == 0.001){c(inc.mult.arm.stud.001, outliers)}else if(tol.multiarm == 0.01){c(inc.mult.arm.stud.01, outliers)}else{outliers}
+                  }
                 }
-              }
-            )
-
-            # get vector of result values
-            sens.anal.vec.df <- t(data.frame(
-              get.sens.anal.vec(res),
-              row.names = cnames
-            ))
+              )
+              t(data.frame(
+                get.sens.anal.vec(res),
+                row.names = cnames
+              ))
+            }, error = function(e) {
+              t(data.frame(
+                rep(NA, length(cnames)),
+                row.names = cnames
+              ))
+            })
 
             sens.anal.df <- rbind(sens.anal.df, sens.anal.vec.df)
 
@@ -1006,9 +1006,8 @@ get.sens.anal.df <- function(
       
         gtsave(
           gt.object,
-          paste(
-            saving.path, "Sens.anal.table.network.all", ".",
-            save.as, sep = ""
+          file.path(
+            saving.path, paste0("Sens.anal.table.network.all.", save.as)
           )
         )      
     }

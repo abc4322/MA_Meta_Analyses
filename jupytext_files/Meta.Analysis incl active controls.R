@@ -5030,22 +5030,30 @@ for (study in 1:study.no){
   
   for (row in 1:nrow(df)){
     sessions.duration <- ifelse(is.na.or.nm(df[row, "Sessions.Duration.in.minutes"]), NA, df[row, "Sessions.Duration.in.minutes"]) %>%
-        # For every element, remove non-numeric characters (except decimal separators (dots))and convert to numeric
-        gsub("[^0-9.]", "", .) %>%
-        as.numeric()
+      # split by " " and get first element and convert to numeric
+      str_split(" ") %>%
+      unlist(use.names = F) %>%
+      .[[1]] %>%
+      as.numeric()
 
     sessions.durations.vec <- append(sessions.durations.vec, sessions.duration)
     
     sessions.frequency <- ifelse(is.na.or.nm(df[row, "Frequency.in.times.per.week"]), NA, df[row, "Frequency.in.times.per.week"]) %>%
-        # For every element, remove non-numeric characters (except decimal separators (dots))and convert to numeric
-        gsub("[^0-9.]", "", .) %>%
-        as.numeric()
+      # split by " " and get first element and convert to numeric
+      str_split(" ") %>%
+      unlist(use.names = F) %>%
+      .[[1]] %>%
+      as.numeric()
+    
     sessions.frequencies.vec <- append(sessions.frequencies.vec, sessions.frequency)
     
     programs.duration <- ifelse(is.na.or.nm(df[row, "Total.Duration.in.Days"]), NA, df[row, "Total.Duration.in.Days"]) %>%
-        # For every element, remove non-numeric characters (except decimal separators (dots))and convert to numeric
-        gsub("[^0-9.]", "", .) %>%
-        as.numeric()
+      # split by " " and get first element and convert to numeric
+      str_split(" ") %>%
+      unlist(use.names = F) %>%
+      .[[1]] %>%
+      as.numeric()
+    
     programs.durations.vec <- append(programs.durations.vec, programs.duration)
   }
 }
@@ -5524,40 +5532,74 @@ source("utils/sensitivity_analysis/get.sens.anal.df.R")
 # ## Get all sensitivity data frames
 
 # %% hidden=true vscode={"languageId": "r"}
-# # for all outcomes / for the comparison of exclusive meditation vs. passive control; Google Chrome has to be installed to get png images
-# saving.path <- r"(C:\Users\anonymous\Documents\GitHub\MA_Meta_Analyses\Sensitivity Analysis tables\)"
-# for (outcome in present.outcomes.sorted){
-#   for (model in c("rand.fix", "mixed", "subgroup")){
-#     if (model == "rand.fix"){
-#       get.sens.anal.df(outcome, model, c(), "png", saving.path)
-#     } else if (model == "mixed" & outcome %in% c("Anxiety", "Depression", "Stress", "Mindfulness")){
-#       for (moderator in c("sessions.duration", "sessions.frequency", "programs.duration", "follow.up.period", "delivery.mode", "meditation.type")){
-#         if (
-#           (outcome == "Anxiety" & moderator == "follow.up.period") |  # moderator follow.up.period has not enough data for anxiety
-#           (outcome == "Mindfulness" & moderator != "follow.up.period")  # only moderator follow.up.period has enough data for mindfulness
-#         ){next}
-#         get.sens.anal.df(outcome, model, c(moderator), "png", saving.path)
-#       }
-#     } else if (model == "subgroup" & outcome %in% c("Anxiety", "Stress", "Mindfulness", "Depression")){
-#       for (subgroup in c("delivery.mode", "meditation.type")){
-#         get.sens.anal.df(outcome, model, c(), "png", saving.path, subgroup)
-#       }
-#     } else if (model == "mixed" & outcome != "Stress"){
-#       # no regressions for these outcomes
-#     } else if (model == "subgroup" & outcome != "Stress"){
-#       # no subgroup analysis for these outcomes
-#     } else {
-#       cat("unmentioned case:", outcome, model, "\n")
-#     }
-#   }
-# }
+# for all outcomes / for the comparison of exclusive meditation vs. passive control; Google Chrome has to be installed to get png images
+saving.path.base <- file.path(Sys.getenv("USERPROFILE"), r"(Documents\GitHub\MA_Meta_Analyses\plots\Sensitivity Analysis tables\)")
+for (outcome in present.outcomes.sorted){
+  saving.path <- file.path(saving.path.base, outcome)
+  # Create the directory if it does not exist
+  if (!dir.exists(saving.path)) {
+    dir.create(saving.path, recursive = TRUE)
+    message("Directory created at: ", saving.path)
+  }
+  for (model in c("rand.fix", "mixed", "subgroup")){
+    if (model == "rand.fix"){
+      get.sens.anal.df(outcome, model, c(), "png", saving.path)
+    } else if (model == "mixed" & outcome %in% c("Anxiety", "Depression", "Stress", "Mindfulness")){
+      for (moderator in c("sessions.duration", "sessions.frequency", "programs.duration", "follow.up.period", "delivery.mode", "meditation.type")){
+        # Get regression results for the outcome and moderator
+        n_data_points <- print.meta.results(
+          outcome, preferred.scale = get.1st.preferred.scale(outcome),
+          basic = F, moderator.vec = c(moderator), print.regplot = F, print.baujat.regression = F, print.regression.results = F, regression.degree.1 = T, regression.degree.2 = F,
+          regression.label = T, return.data = "regression.results.linear"
+        ) %>%
+          .$data %>%
+          filter(!is.na(!!sym(moderator))) %>%
+          nrow()
+        if (n_data_points < 10) next
 
-# # for network meta-analysis of all outcomes in one model
-# net.sens.anal.df <- get.sens.anal.df(present.outcomes, "net", save.as = "html", saving.path = saving.path)
+        get.sens.anal.df(outcome, model, c(moderator), "png", saving.path)
+      }
+    } else if (model == "subgroup" & outcome %in% c("Anxiety", "Stress", "Mindfulness", "Depression")){
+      for (subgroup in c("delivery.mode", "meditation.type")){
+        get.sens.anal.df(outcome, model, c(), "png", saving.path, subgroup)
+      }
+    } else if (model == "mixed" & outcome != "Stress"){
+      # no regressions for these outcomes
+    } else if (model == "subgroup" & outcome != "Stress"){
+      # no subgroup analysis for these outcomes
+    } else {
+      cat("unmentioned case:", outcome, model, "\n")
+    }
+  }
+}
 
-# %% hidden=true vscode={"languageId": "r"}
 # for network meta-analysis of all outcomes in one model
-# net.sens.anal.df <- get.sens.anal.df(present.outcomes, "net", save.as = "html", saving.path = r"(C:\Users\anonymous\Documents\GitHub\MA_Meta_Analyses\Sensitivity Analysis tables\)")
+saving.path.base.net <- file.path(saving.path.base, "Network_Meta_Analysis")
+if (!dir.exists(saving.path.base.net)) {
+  dir.create(saving.path.base.net, recursive = TRUE)
+  message("Directory created at: ", saving.path.base.net)
+}
+# net.sens.anal.df <- get.sens.anal.df(present.outcomes, "net", save.as = "html", saving.path = saving.path.base.net)
+
+# %% vscode={"languageId": "r"}
+# network meta-analysis of outcomes in separate smaller models per outcome domain
+net.anal.outcomes <- list(
+  resilience = "Resilience Scale",
+  mental_health = mental.health.outcomes,
+  resilience_factors = present.outcomes.secondary
+)
+
+net.sens.anal.df.list <- list()
+
+for (domain in names(net.anal.outcomes)){
+  saving.path <- file.path(saving.path.base.net, domain)
+  # Create the directory if it does not exist
+  if (!dir.exists(saving.path)) {
+    dir.create(saving.path, recursive = TRUE)
+    message("Directory created at: ", saving.path)
+  }
+  net.sens.anal.df.list[[domain]] <- get.sens.anal.df(net.anal.outcomes[[domain]], "net", save.as = "html", saving.path = saving.path)
+}
 
 # %% [markdown] vscode={"languageId": "r"}
 # ## Summary table for different subgroups
@@ -5778,9 +5820,20 @@ sens.summary.df
 # %% hidden=true vscode={"languageId": "r"}
 # get df of all sensitivity analysis
 i <- 1
-for (outcome in c("Stress", "Anxiety")){
+for (outcome in c("Stress", "Anxiety", "Mindfulness", "Depression")){
   for (moderator in c("sessions.duration", "sessions.frequency", "programs.duration", "follow.up.period")){
-    if (outcome == "Anxiety" & moderator == "follow.up.period"){
+    # Get regression results for the outcome and moderator
+    n_data_points <- print.meta.results(
+      outcome, preferred.scale = get.1st.preferred.scale(outcome),
+      basic = F, moderator.vec = c(moderator), print.regplot = F, print.baujat.regression = F, print.regression.results = F, regression.degree.1 = T, regression.degree.2 = F,
+      regression.label = T, return.data = "regression.results.linear"
+    ) %>%
+      .$data %>%
+      filter(!is.na(!!sym(moderator))) %>%
+      nrow()
+
+    # Skip iteration if there are less than 10 included studies / data points for the regression
+    if (n_data_points < 10){
       next
     }
     if (i == 1)
@@ -5793,6 +5846,10 @@ for (outcome in c("Stress", "Anxiety")){
   }
 }
 sens.anal.df.all
+
+# %% vscode={"languageId": "r"}
+sens.anal.df.all %>% filter(outcome == "Depression", moderator == "programs.duration")
+
 
 # %% hidden=true vscode={"languageId": "r"}
 # generate df that shows if primary analyses are robust against analyzerd choices
@@ -5817,7 +5874,9 @@ plus <- "+"
 plus.minus <- "+/-"
 
 for (outcome in unique(sens.anal.df.all$outcome)){
-  for (moderator in unique(sens.anal.df.all$moderator)){
+  # Get present moderators for the outcome
+  moderators <- sens.anal.df.all[sens.anal.df.all$outcome == outcome, "moderator"] %>% unique()
+  for (moderator in moderators){
     if (outcome == "Anxiety" & moderator == "follow.up.period"){
       next
     }
@@ -5895,8 +5954,18 @@ for (outcome in unique(sens.anal.df.all$outcome)){
     
     sens.anal.df.no.sq <- sens.anal.df[substr(sens.anal.df$`Decision Codes`, nchar(sens.anal.df$`Decision Codes`) - 1, nchar(sens.anal.df$`Decision Codes`)) != "0",]
       # cut squared models as meaning of sign is other than in linear model
-    uni.m.sig <- unique(sens.anal.df.no.sq[-1, c('Moderator\'s coefficient CI lower threshold', 'Moderator\'s coefficient CI upper threshold')] < 0)
-    uni.m.sig <- uni.m.sig[which(!is.na(uni.m.sig))]
+
+    # check for sign within CI of moderator in sensitivity analysis and rate robustness
+    ci_data <- sens.anal.df.no.sq[-1, c('Moderator\'s coefficient CI lower threshold', 'Moderator\'s coefficient CI upper threshold')]
+    ci_directions <- apply(ci_data, 1, function(row) {
+      low <- as.numeric(row[1]); up <- as.numeric(row[2])
+      if (is.na(low) | is.na(up)) return(NA_character_)
+      if (low < 0 & up < 0) return(minus)
+      if (low > 0 & up > 0) return(plus)
+      return(plus.minus)
+    })
+    ci_directions <- ci_directions[!is.na(ci_directions)]
+    uni.m.sig <- unique(ci_directions)  # now a character vector
 
     if (length(uni.m.sig) > 1 & sig != plus.minus){
       sens.summary.df[i, "Sign of mod. CI robust in sensitivity analysis"] <- no
