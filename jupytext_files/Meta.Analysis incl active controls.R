@@ -3859,52 +3859,52 @@ outlier.list <- list(
 # #### Get study labes of outlaying/influential moderators
 
 # %% hidden=true vscode={"languageId": "r"}
-# outl.stud.labs.df <- data.frame(matrix(nrow = 0, ncol = 4))
-# colnames(outl.stud.labs.df) <- c("Outcome", "Moderator", "Degree", "Outliers or influential cases")
+outl.stud.labs.df <- data.frame(matrix(nrow = 0, ncol = 4))
+colnames(outl.stud.labs.df) <- c("Outcome", "Moderator", "Degree", "Outliers or influential cases")
                                 
-# for (outcome in c("Anxiety", "Depression", "Mindfulness", "Stress")){
-#   for (moderator in c("sessions.duration", "sessions.frequency", "programs.duration", "follow.up.period", "delivery.mode", "meditation.type")){
-#     for (degree in c(".lin", ".sq")){
-#       if (
-#         (moderator %in% c("delivery.mode", "meditation.type") & degree == ".sq") |
-#         (outcome == "Anxiety" & moderator == "follow.up.period") |
-#         (outcome %in% c("Depression", "Mindfulness") & !moderator %in% c("delivery.mode", "meditation.type"))
-#       ){
-#         next
-#       }
+for (outcome in c("Anxiety", "Depression", "Mindfulness", "Stress")){
+  for (moderator in c("sessions.duration", "sessions.frequency", "programs.duration", "follow.up.period", "delivery.mode", "meditation.type")){
+    for (degree in c(".lin", ".sq")){
+      if (
+        (moderator %in% c("delivery.mode", "meditation.type") & degree == ".sq") |
+        (outcome == "Anxiety" & moderator == "follow.up.period") |
+        (outcome %in% c("Depression", "Mindfulness") & !moderator %in% c("delivery.mode", "meditation.type"))
+      ){
+        next
+      }
       
-#       if (moderator %in% c("sessions.duration", "sessions.frequency", "programs.duration", "follow.up.period")){
-#         outl.stud.labs <- unique(print.meta.results(
-#           outcome, preferred.scale = get.1st.preferred.scale(outcome),
-#           basic = F, moderator.vec = c(moderator), print.regplot = F, print.baujat.regression = F, print.regression.results = F, regression.degree.1 = ifelse(degree == ".lin", T, F), regression.degree.2 = ifelse(degree == ".sq", T, F),
-#           regression.label = T, return.data = ifelse(degree == ".lin", "regression.results.linear", "regression.results.poly")
-#         )$data$study.id[outlier.list[[paste(moderator, degree, sep = "")]][[outcome]]])
-#       } else {
-#         outl.stud.labs <- unique(print.meta.results(
-#           outcome, preferred.scale = get.1st.preferred.scale(outcome),
-#           basic = F, moderator.vec = c(moderator), print.regplot = F, print.baujat.regression = F, print.regression.results = F, regression.degree.1 = ifelse(degree == ".lin", T, F), regression.degree.2 = ifelse(degree == ".sq", T, F),
-#           regression.label = T, return.data = ifelse(degree == ".lin", "regression.results.linear", "regression.results.poly")
-#         )$data$study.id[outlier.list[[moderator]][[outcome]]])
-#       }
+      if (moderator %in% c("sessions.duration", "sessions.frequency", "programs.duration", "follow.up.period")){
+        outl.stud.labs <- unique(print.meta.results(
+          outcome, preferred.scale = get.1st.preferred.scale(outcome),
+          basic = F, moderator.vec = c(moderator), print.regplot = F, print.baujat.regression = F, print.regression.results = F, regression.degree.1 = ifelse(degree == ".lin", T, F), regression.degree.2 = ifelse(degree == ".sq", T, F),
+          regression.label = T, return.data = ifelse(degree == ".lin", "regression.results.linear", "regression.results.poly")
+        )$data$study.id[outlier.list[[paste(moderator, degree, sep = "")]][[outcome]]])
+      } else {
+        outl.stud.labs <- unique(print.meta.results(
+          outcome, preferred.scale = get.1st.preferred.scale(outcome),
+          basic = F, moderator.vec = c(moderator), print.regplot = F, print.baujat.regression = F, print.regression.results = F, regression.degree.1 = ifelse(degree == ".lin", T, F), regression.degree.2 = ifelse(degree == ".sq", T, F),
+          regression.label = T, return.data = ifelse(degree == ".lin", "regression.results.linear", "regression.results.poly")
+        )$data$study.id[outlier.list[[moderator]][[outcome]]])
+      }
       
-#       if (length(outl.stud.labs) == 0){
-#         outl.stud.labs <- "None"
-#       }
+      if (length(outl.stud.labs) == 0){
+        outl.stud.labs <- "None"
+      }
       
-#       outl.stud.labs.df.temp <- data.frame(
-#         Outcome = str_to_lower(outcome),
-#         Moderator = moderator,
-#         Degree = ifelse(degree == ".lin", "linear", "quadratic"),
-#         `Outliers or influential cases` = paste(outl.stud.labs, collapse = ", ")
-#       )
-#       colnames(outl.stud.labs.df.temp) <- colnames(outl.stud.labs.df)
+      outl.stud.labs.df.temp <- data.frame(
+        Outcome = str_to_lower(outcome),
+        Moderator = moderator,
+        Degree = ifelse(degree == ".lin", "linear", "quadratic"),
+        `Outliers or influential cases` = paste(outl.stud.labs, collapse = ", ")
+      )
+      colnames(outl.stud.labs.df.temp) <- colnames(outl.stud.labs.df)
       
-#       outl.stud.labs.df <- rbind(outl.stud.labs.df, outl.stud.labs.df.temp)
+      outl.stud.labs.df <- rbind(outl.stud.labs.df, outl.stud.labs.df.temp)
       
-#     }
-#   }
-# }
-# outl.stud.labs.df
+    }
+  }
+}
+outl.stud.labs.df
 
 # %% [markdown] heading_collapsed=true hidden=true
 # #### Network meta-analysis
@@ -5532,53 +5532,53 @@ source("utils/sensitivity_analysis/get.sens.anal.df.R")
 # ## Get all sensitivity data frames
 
 # %% hidden=true vscode={"languageId": "r"}
-# for all outcomes / for the comparison of exclusive meditation vs. passive control; Google Chrome has to be installed to get png images
-saving.path.base <- file.path(Sys.getenv("USERPROFILE"), r"(Documents\GitHub\MA_Meta_Analyses\plots\Sensitivity Analysis tables\)")
-for (outcome in present.outcomes.sorted){
-  saving.path <- file.path(saving.path.base, outcome)
-  # Create the directory if it does not exist
-  if (!dir.exists(saving.path)) {
-    dir.create(saving.path, recursive = TRUE)
-    message("Directory created at: ", saving.path)
-  }
-  for (model in c("rand.fix", "mixed", "subgroup")){
-    if (model == "rand.fix"){
-      get.sens.anal.df(outcome, model, c(), "png", saving.path)
-    } else if (model == "mixed" & outcome %in% c("Anxiety", "Depression", "Stress", "Mindfulness")){
-      for (moderator in c("sessions.duration", "sessions.frequency", "programs.duration", "follow.up.period", "delivery.mode", "meditation.type")){
-        # Get regression results for the outcome and moderator
-        n_data_points <- print.meta.results(
-          outcome, preferred.scale = get.1st.preferred.scale(outcome),
-          basic = F, moderator.vec = c(moderator), print.regplot = F, print.baujat.regression = F, print.regression.results = F, regression.degree.1 = T, regression.degree.2 = F,
-          regression.label = T, return.data = "regression.results.linear"
-        ) %>%
-          .$data %>%
-          filter(!is.na(!!sym(moderator))) %>%
-          nrow()
-        if (n_data_points < 10) next
+# # for all outcomes / for the comparison of exclusive meditation vs. passive control; Google Chrome has to be installed to get png images
+# saving.path.base <- file.path(Sys.getenv("USERPROFILE"), r"(Documents\GitHub\MA_Meta_Analyses\plots\Sensitivity Analysis tables\)")
+# for (outcome in present.outcomes.sorted){
+#   saving.path <- file.path(saving.path.base, outcome)
+#   # Create the directory if it does not exist
+#   if (!dir.exists(saving.path)) {
+#     dir.create(saving.path, recursive = TRUE)
+#     message("Directory created at: ", saving.path)
+#   }
+#   for (model in c("rand.fix", "mixed", "subgroup")){
+#     if (model == "rand.fix"){
+#       get.sens.anal.df(outcome, model, c(), "png", saving.path)
+#     } else if (model == "mixed" & outcome %in% c("Anxiety", "Depression", "Stress", "Mindfulness")){
+#       for (moderator in c("sessions.duration", "sessions.frequency", "programs.duration", "follow.up.period", "delivery.mode", "meditation.type")){
+#         # Get regression results for the outcome and moderator
+#         n_data_points <- print.meta.results(
+#           outcome, preferred.scale = get.1st.preferred.scale(outcome),
+#           basic = F, moderator.vec = c(moderator), print.regplot = F, print.baujat.regression = F, print.regression.results = F, regression.degree.1 = T, regression.degree.2 = F,
+#           regression.label = T, return.data = "regression.results.linear"
+#         ) %>%
+#           .$data %>%
+#           filter(!is.na(!!sym(moderator))) %>%
+#           nrow()
+#         if (n_data_points < 10) next
 
-        get.sens.anal.df(outcome, model, c(moderator), "png", saving.path)
-      }
-    } else if (model == "subgroup" & outcome %in% c("Anxiety", "Stress", "Mindfulness", "Depression")){
-      for (subgroup in c("delivery.mode", "meditation.type")){
-        get.sens.anal.df(outcome, model, c(), "png", saving.path, subgroup)
-      }
-    } else if (model == "mixed" & outcome != "Stress"){
-      # no regressions for these outcomes
-    } else if (model == "subgroup" & outcome != "Stress"){
-      # no subgroup analysis for these outcomes
-    } else {
-      cat("unmentioned case:", outcome, model, "\n")
-    }
-  }
-}
+#         get.sens.anal.df(outcome, model, c(moderator), "png", saving.path)
+#       }
+#     } else if (model == "subgroup" & outcome %in% c("Anxiety", "Stress", "Mindfulness", "Depression")){
+#       for (subgroup in c("delivery.mode", "meditation.type")){
+#         get.sens.anal.df(outcome, model, c(), "png", saving.path, subgroup)
+#       }
+#     } else if (model == "mixed" & outcome != "Stress"){
+#       # no regressions for these outcomes
+#     } else if (model == "subgroup" & outcome != "Stress"){
+#       # no subgroup analysis for these outcomes
+#     } else {
+#       cat("unmentioned case:", outcome, model, "\n")
+#     }
+#   }
+# }
 
-# for network meta-analysis of all outcomes in one model
-saving.path.base.net <- file.path(saving.path.base, "Network_Meta_Analysis")
-if (!dir.exists(saving.path.base.net)) {
-  dir.create(saving.path.base.net, recursive = TRUE)
-  message("Directory created at: ", saving.path.base.net)
-}
+# # for network meta-analysis of all outcomes in one model
+# saving.path.base.net <- file.path(saving.path.base, "Network_Meta_Analysis")
+# if (!dir.exists(saving.path.base.net)) {
+#   dir.create(saving.path.base.net, recursive = TRUE)
+#   message("Directory created at: ", saving.path.base.net)
+# }
 # net.sens.anal.df <- get.sens.anal.df(present.outcomes, "net", save.as = "html", saving.path = saving.path.base.net)
 
 # %% vscode={"languageId": "r"}
@@ -7656,7 +7656,7 @@ forest(
 cat("with special cases included")
 data.frame(
   dif.to.pas.con.sig = net.res.secondary.outcomes$pval.random[-c(1, 3, 4), "passive control"],
-  dif.to.med.sig = net.res.secondary.outcomes$pval.random[-c(1, 3, 4), "meditation (exclusive)"], # rows that do not occur in df below cutö
+  dif.to.med.sig = net.res.secondary.outcomes$pval.random[-c(1, 3, 4), "meditation (exclusive)"], # rows that do not occur in df below cut
   SMD.dif.to.med = round(net.res.secondary.outcomes$TE.random[-c(1, 3, 4),"meditation (exclusive)"], 2)
 )
 data.frame(
@@ -7669,6 +7669,18 @@ data.frame(
   dif.to.pas.con.sig = net.res.n.o$pval.random[- 2, "passive control"] <.05,  # is difference of these group to passive control significant?
   dif.to.med.sig = net.res.n.o$pval.random[- 2, "meditation (exclusive)"] <.05,  # row meditation (exclusive) cut
   SMD.dif.to.med = round(net.res.n.o$TE.random[-2,"meditation (exclusive)"], 2)
+)
+
+# %% vscode={"languageId": "r"}
+options(repr.plot.width = 10, repr.plot.height = 7, repr.plot.res = 150)
+funnel(
+  net.res.secondary.outcomes, order = "passive control", #method.bias = "Egger",
+  legend = T,  yaxis="invse", col = c(
+    "blue", "red", "purple"
+#     "orange", "pink", 
+#     "khaki", "plum", , "sandybrown", 
+#     "coral", "gold4"
+  )
 )
 
 # %% [markdown]
@@ -8177,7 +8189,7 @@ for (outcome in present.outcomes.sorted){
   )
   
   if (!is.logical(net.res.outcome)){
-    png(paste("Network Forest Plots/", i, ".", outcome, ".net.forest.png", sep = ""))
+    png(paste("plots/Network Forest Plots/", i, ".", outcome, ".net.forest.png", sep = ""))
 
     net.meta.analyze(
       outcome, net.df = F, net.res = net.res.outcome, comparisons.skip.list = F,
@@ -8206,7 +8218,7 @@ for (outcome in present.outcomes.sorted){
   )
   
   if (nrow(meta.df.list[[1]]) >= 3){
-    png(paste("Funnel Plots/", i, ".", outcome, ".funnel.png", sep = ""), width = 1000)
+    png(paste("plots/Funnel Plots/", i, ".", outcome, ".funnel.png", sep = ""), width = 1000)
 
     print.meta.results(
       outcome, preferred.scale = get.1st.preferred.scale(outcome), , meta.df.list = meta.df.list,
@@ -8234,7 +8246,7 @@ for (outcome in present.outcomes.sorted){
   )
   
   if (nrow(meta.df.list[[1]]) >= 3){
-    png(paste("Baujat Plots/", i, ".", outcome, ".baujat.png", sep = ""), width = 1000)
+    png(paste("plots/Baujat Plots/", i, ".", outcome, ".baujat.png", sep = ""), width = 1000)
 
     print.meta.results(
       outcome, preferred.scale = get.1st.preferred.scale(outcome), meta.df.list = meta.df.list,
@@ -8253,7 +8265,7 @@ for (outcome in outcomes.no.10.plus.passive){
     if (outcome == "Anxiety" & moderator == "follow.up.period"){
       next
     }
-    png(paste("Baujat Plots/", outcome, ".", moderator, ".baujat.png", sep = ""), width = 1000)
+    png(paste("plots/Baujat Plots/", outcome, ".", moderator, ".baujat.png", sep = ""), width = 1000)
 
     print.meta.results(
       outcome, preferred.scale = get.1st.preferred.scale(outcome),
@@ -8266,12 +8278,17 @@ for (outcome in outcomes.no.10.plus.passive){
 
 # %% hidden=true vscode={"languageId": "r"}
 # save all Baujat Plots plots (quadratic/squared mixed-effects meta-regression)
-for (outcome in c("Anxiety", "Stress")){
+for (outcome in c(
+  "Anxiety",
+  "Stress",
+  "Depression",
+  "Mindfulness"
+)){
   for (moderator in c('programs.duration', 'sessions.duration', 'sessions.frequency', 'follow.up.period')){
     if (outcome == "Anxiety" & moderator == "follow.up.period"){
       next
     }
-    png(paste("Baujat Plots/", outcome, ".", moderator, ".baujat.squared.png", sep = ""), width = 1000)
+    png(paste("plots/Baujat Plots/", outcome, ".", moderator, ".baujat.squared.png", sep = ""), width = 1000)
 
     print.meta.results(
       outcome, preferred.scale = get.1st.preferred.scale(outcome),
@@ -8298,7 +8315,7 @@ for (outcome in present.outcomes.sorted){
   )
   
   if (nrow(meta.df.list[[1]]) >= 3){
-    png(paste("Influence Plots/", i, ".", outcome, ".influence.png", sep = ""), width = 1000)
+    png(paste("plots/Influence Plots/", i, ".", outcome, ".influence.png", sep = ""), width = 1000)
 
     print.meta.results(
       outcome, preferred.scale = get.1st.preferred.scale(outcome), meta.df.list = meta.df.list,
@@ -8317,7 +8334,7 @@ for (outcome in outcomes.no.10.plus.passive){
     if (outcome == "Anxiety" & moderator == "follow.up.period"){
       next
     }
-    png(paste("Influence Plots/", outcome, ".", moderator, ".influence.png", sep = ""), width = 1000)
+    png(paste("plots/Influence Plots/", outcome, ".", moderator, ".influence.png", sep = ""), width = 1000)
 
     print.meta.results(
       outcome, preferred.scale = get.1st.preferred.scale(outcome),
@@ -8335,7 +8352,7 @@ for (outcome in outcomes.no.10.plus.passive){
     if (outcome == "Anxiety" & moderator == "follow.up.period"){
       next
     }
-    png(paste("Influence Plots/", outcome, ".", moderator, ".influence.squared.png", sep = ""), width = 1000)
+    png(paste("plots/Influence Plots/", outcome, ".", moderator, ".influence.squared.png", sep = ""), width = 1000)
 
     print.meta.results(
       outcome, preferred.scale = get.1st.preferred.scale(outcome),
@@ -8353,12 +8370,16 @@ for (outcome in outcomes.no.10.plus.passive){
 # ## Plots per single outcomes
 
 # %% hidden=true vscode={"languageId": "r"}
-for (outcome in c("Anxiety", "Stress")){
+for (outcome in c(
+  "Anxiety", "Stress",
+  "Depression",
+  "Mindfulness"
+)){
   for (moderator in c('programs.duration', 'sessions.duration', 'sessions.frequency', 'follow.up.period')){
     if (outcome == "Anxiety" & moderator == "follow.up.period"){
       next
     }
-    png(paste("QQ Plots/", outcome, ".", moderator, ".QQ.plot.png", sep = ""), width = 1000)
+    png(paste("plots/QQ Plots/", outcome, ".", moderator, ".QQ.plot.png", sep = ""), width = 1000)
 
     print.meta.results(
       outcome, preferred.scale = get.1st.preferred.scale(outcome),
