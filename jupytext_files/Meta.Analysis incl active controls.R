@@ -5737,6 +5737,23 @@ treat_author_mapping <- lapply(all_treatments, function(treat) {
 })
 treat_author_mapping
 
+# %% [markdown]
+# ## Correlation Matrix for moderators
+
+# %% vscode={"languageId": "r"}
+# regression etc.
+cor.matrix.list <- list()
+for (outcome in c("Anxiety", "Depression", "Stress", "Mindfulness")) {
+  cor.matrix.list[[outcome]] <- print.meta.results(
+    outcome, preferred.scale = get.1st.preferred.scale(outcome),
+    basic = F, moderator.vec = c("programs.duration"), print.regplot = F, print.baujat.regression = F, print.regression.results = F, regression.degree.1 = T, regression.degree.2 = F,
+    regression.label = T, return.data = "correlation.matrix"
+  ) %>%
+    # Remove rownames
+    `rownames<-`(NULL)
+}
+cor.matrix.list
+
 # %% [markdown] heading_collapsed=true
 # ## Robustness Tables
 
