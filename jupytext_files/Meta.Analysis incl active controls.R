@@ -5605,6 +5605,7 @@ for (domain in names(net.anal.outcomes)){
 # ## Summary table for different subgroups
 
 # %% vscode={"languageId": "r"}
+options(repr.matrix.max.rows=50, repr.matrix.max.cols=50)
 # define rownames and rownames NA vector for sub_summary_df
 rnames <- c(	
   "Overall",
@@ -5711,6 +5712,30 @@ total_sub_summary_df <- total_sub_summary_df |>
   )
 
 total_sub_summary_df
+
+# %% [markdown]
+# ## Identify studies reporting sufficient data for meta-analysis per intervention or control group
+
+# %% vscode={"languageId": "r"}
+# Get mapping of author names to treatments for all studies included in the network meta-analysis
+author_treat_mapping <- net.res.all$data %>%
+  # Remove any text after " #" in the studlab column to get the author names
+  mutate(studlab = sub(" #.*", "", studlab)) %>%
+  distinct(studlab, treat1, treat2)
+
+# Get all unique treatments across all studies
+all_treatments <- unique(c(author_treat_mapping$treat1, author_treat_mapping$treat2))
+
+# Create a mapping of treatments to their corresponding author names
+treat_author_mapping <- lapply(all_treatments, function(treat) {
+  authors <- author_treat_mapping %>%
+    filter(treat1 == treat | treat2 == treat) %>%
+    pull(studlab) %>%
+    unique() %>%
+    paste0(collapse = ", ")
+  list(treatment = treat, authors = authors)
+})
+treat_author_mapping
 
 # %% [markdown] heading_collapsed=true
 # ## Robustness Tables
