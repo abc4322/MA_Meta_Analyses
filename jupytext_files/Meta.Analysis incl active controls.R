@@ -61,17 +61,6 @@
 # # cat("\n✅ Environment restored! Your project now uses the same\n",
 # #     "R version and package versions as the source machine.\n")
 
-# %% [markdown] vscode={"languageId": "r"}
-# ToDos:
-# - [x] Assign meditation techniques to categories (e.g., focused attention, open monitoring, loving-kindness, body scan, etc.)
-# - [x] Assign Scales to outcomes
-# - [x] Implement additional outcomes and interventions from theresa
-# - [x] fix update.meta bug
-# - [x] Define outliers and influential cases
-# - [x] Define studies causing inconsistency (split models primary and secondary outcomes)
-# - [x] Check if addition of 6th intervention affects the med.vec.list variable
-# - [ ] reflect multiple network models in get.sens.anal.df.R() when model == "net"
-
 # %% [markdown]
 # # Preprocess Data
 #
