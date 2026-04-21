@@ -2301,12 +2301,12 @@ for (row in 1:nrow(scale.abbreviations.df)){
 scale.abbreviations.df
 
 # %% vscode={"languageId": "r"}
-# # generate string to paste in legend
-# legend.string <- ""
-# for (row in 1:nrow(scale.abbreviations.df)){
-#   legend.string <- paste(legend.string, scale.abbreviations.df[row, 1], " = ", scale.abbreviations.df[row, 2], ", ", sep = "")
-# }
-# legend.string
+# generate string to paste in legend
+legend.string <- ""
+for (row in 1:nrow(scale.abbreviations.df)){
+  legend.string <- paste(legend.string, scale.abbreviations.df[row, 1], " = ", scale.abbreviations.df[row, 2], ", ", sep = "")
+}
+legend.string
 
 # %% [markdown] heading_collapsed=true
 # ### Delivery Mode
@@ -3479,6 +3479,16 @@ library(mclust)
 # install.packages("reshape2")
 library(reshape2)
 
+# %% [markdown]
+# #### Load Utility Functions for meta-analyses and network meta-analyses
+
+# %% vscode={"languageId": "r"}
+source("utils/meta-analysis/sub_functions_1.R")
+source("utils/meta-analysis/main_function_1_forest_funnel_return_regression.R")
+source("utils/meta-analysis/sub_functions_2.R")
+source("utils/meta-analysis/main_function_2_regression.R")
+source("utils/meta-analysis/main_functions_3_overall_and_network_meta-analysis.R")
+
 # %% [markdown] hidden=true
 # ### Set paramters
 
@@ -3918,16 +3928,6 @@ names(comparions.all) <- c(
   "MBSR", "biofeedback", "sham bio feedback", "stress management", "dog therapy", "walking", "combinations"
 )
 names(comparions.all)
-
-# %% [markdown]
-# #### Load Utility Functions for meta-analyses and network meta-analyses
-
-# %% vscode={"languageId": "r"}
-source("utils/meta-analysis/sub_functions_1.R")
-source("utils/meta-analysis/main_function_1_forest_funnel_return_regression.R")
-source("utils/meta-analysis/sub_functions_2.R")
-source("utils/meta-analysis/main_function_2_regression.R")
-source("utils/meta-analysis/main_functions_3_overall_and_network_meta-analysis.R")
 
 # %% [markdown] heading_collapsed=true hidden=true
 # ## Scales used in oucomes of Summary of Findings table
@@ -7070,6 +7070,41 @@ intervention.comparisons.df.list[["Flett 2019b"]]
 print.array.not.na(results.descriptive.array[,,,"Outcome.4","Scale.1","Flett 2019b"])
 
 # %% [markdown]
+# ### Reporting (League Table and nettable)
+
+# %% vscode={"languageId": "r"}
+# table of p-values comparing all treatments
+round(net.res.resilience.scale$pval.random, 2)
+
+# %% vscode={"languageId": "r"}
+# league table
+league.tab <- netleague(net.res.resilience.scale)
+league.tab$random
+
+# %% vscode={"languageId": "r"}
+options(repr.matrix.max.rows=10, repr.matrix.max.cols=10)
+# get table of SMDs
+net.smd.df <- data.frame(matrix(".", nrow = net.res.resilience.scale$n, ncol = net.res.resilience.scale$n))
+
+for(i in 1:nrow(net.smd.df)){
+  for(j in 1:ncol(net.smd.df)){
+    if (i < j){
+      next
+    }
+    # Concatenate the contents and assign to the new data frame
+    net.smd.df[i,j] <- paste(
+      as.character(round(net.res.resilience.scale$TE.random[i,j], 2)), " [",
+      as.character(round(net.res.resilience.scale$lower.random[i,j], 2)), ", ",
+      as.character(round(net.res.resilience.scale$upper.random[i,j], 2)), "]",
+      sep = ""
+    )
+  }
+}
+rownames(net.smd.df) <- net.res.resilience.scale$trts
+colnames(net.smd.df) <- net.res.resilience.scale$trts
+net.smd.df
+
+# %% [markdown]
 # ## [Mental health-related outcomes] Overall network meta-analysis
 
 # %% [markdown]
@@ -7682,6 +7717,41 @@ funnel(
 #     "coral", "gold4"
   )
 )
+
+# %% [markdown]
+# ### Reporting (League Table and nettable)
+
+# %% vscode={"languageId": "r"}
+# table of p-values comparing all treatments
+round(net.res.secondary.outcomes$pval.random, 2)
+
+# %% vscode={"languageId": "r"}
+# league table
+league.tab <- netleague(net.res.secondary.outcomes)
+league.tab$random
+
+# %% vscode={"languageId": "r"}
+options(repr.matrix.max.rows=10, repr.matrix.max.cols=10)
+# get table of SMDs
+net.smd.df <- data.frame(matrix(".", nrow = net.res.secondary.outcomes$n, ncol = net.res.secondary.outcomes$n))
+
+for(i in 1:nrow(net.smd.df)){
+  for(j in 1:ncol(net.smd.df)){
+    if (i < j){
+      next
+    }
+    # Concatenate the contents and assign to the new data frame
+    net.smd.df[i,j] <- paste(
+      as.character(round(net.res.secondary.outcomes$TE.random[i,j], 2)), " [",
+      as.character(round(net.res.secondary.outcomes$lower.random[i,j], 2)), ", ",
+      as.character(round(net.res.secondary.outcomes$upper.random[i,j], 2)), "]",
+      sep = ""
+    )
+  }
+}
+rownames(net.smd.df) <- net.res.secondary.outcomes$trts
+colnames(net.smd.df) <- net.res.secondary.outcomes$trts
+net.smd.df
 
 # %% [markdown]
 # # Create Shiny Dashboard (of inference statistics)
